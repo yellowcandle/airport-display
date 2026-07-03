@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>啟德機場離港班機 · Kai Tak Aircraft Departures</title>
+
+    <!-- Fonts: IBM Plex Mono (drum cells), Noto Sans HK (Chinese), Oswald (header). -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600;700&family=Noto+Sans+HK:wght@600;700&family=Oswald:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="board.css" />
+  </head>
+  <body>
+    <div class="stage">
+      <div class="frame" id="frame">
+        <!-- Bilingual header — printed in black on the yellow frame, as on the
+             real Kai Tak board (see reference photos). -->
+        <div class="header">
+          <div class="title-en">Aircraft Departures</div>
+          <div class="title-zh">離港班機</div>
+        </div>
+
+        <div class="board kaitak">
+          <!-- Bilingual column labels (aligned to the same grid as the rows). -->
+          <div class="klabels">
+            <div class="klabel" style="grid-column: 2">
+              <span class="en">flight</span><span class="zh">班機</span>
+            </div>
+            <div class="klabel" style="grid-column: 3 / span 2">
+              <span class="en">to</span><span class="zh">前往</span>
+            </div>
+            <div class="klabel" style="grid-column: 5">
+              <span class="en">scheduled</span><span class="zh">預定時間</span>
+            </div>
+            <div class="klabel" style="grid-column: 6">
+              <span class="en">check-in</span><span class="zh">行李託運</span>
+            </div>
+            <div class="klabel" style="grid-column: 7">
+              <span class="en">status</span><span class="zh">情況</span>
+            </div>
+            <div class="klabel" style="grid-column: 8">
+              <span class="en">embark</span><span class="zh">入閘時間</span>
+            </div>
+          </div>
+
+          <!-- Flight rows are injected here by board.js. -->
+          <div id="rows" class="rows"></div>
+
+          <!-- Subtle stale-data indicator; shown only while .board has
+               .is-stale (toggled by data.js when the worker serves a cached
+               copy because the HKIA upstream was unreachable). -->
+          <div class="stale-indicator" aria-hidden="true">· stale ·</div>
+        </div>
+      </div>
+    </div>
+
+    <script src="flap.js"></script>
+    <script src="board.js"></script>
+    <script src="data.js"></script>
+  </body>
+</html>

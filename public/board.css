@@ -1,0 +1,193 @@
+/*
+ * board.css — Kai Tak "AIRCRAFT DEPARTURES" split-flap board skin.
+ * Palette + layout derived from the reference photos and Paper mockup.
+ * No build step; pairs with flap.js (cell engine) and board.js (rendering).
+ */
+
+:root {
+  /* Palette */
+  --frame-yellow: #D9A62B;
+  --board-black: #0D0D0D;
+  --flap-face: #1A1A1A;
+  --flap-text: #F5F3EC;
+  --label-muted: #8A8577;
+  --lamp-red: #E8261C;
+  --lamp-dim: #4A1210;
+
+  /* Cell geometry — drum cells are fixed-width so groups align into columns. */
+  --cw: 20px;   /* drum cell width  (must match CELL.w in board.js) */
+  --ch: 28px;   /* drum cell height */
+  --col-gap: 10px;
+
+  /* Column widths = (slot count × cell width), matching the slot counts in board.js */
+  --col-airline: 52px;
+  --col-flight:  calc(7 * var(--cw));   /* 140 */
+  --col-destEN:  calc(13 * var(--cw));  /* 260 */
+  --col-destZH:  82px;
+  --col-sched:   calc(5 * var(--cw));   /* 100 */
+  --col-checkin: calc(5 * var(--cw));   /* 100 */
+  --col-status:  calc(12 * var(--cw));  /* 240 */
+  --col-embark:  calc(5 * var(--cw));   /* 100 */
+  --col-lamp:    26px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;                 /* board is scaled to fit; never scroll */
+  background: #050505;
+}
+
+.stage {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Outer amber frame. Scaled as a whole by board.js (transform: scale).
+ * The real board's yellow frame has near-square corners, so keep the radius
+ * tiny — just enough to avoid a harsh pixel edge. */
+.frame {
+  background: var(--frame-yellow);
+  padding: 14px 18px 16px;
+  border-radius: 2px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  transform-origin: center center;
+}
+
+.board {
+  position: relative;                /* anchors the stale indicator */
+  background: var(--board-black);
+  padding: 18px 22px;
+  border-radius: 1px;
+}
+
+/* ---- Header (black text on the yellow frame, per the photos) ----------- */
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 2px 4px 10px;
+}
+.title-en {
+  font-family: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 700;
+  font-size: 40px;
+  letter-spacing: 0.06em;
+  color: var(--board-black);
+  text-transform: uppercase;
+}
+.title-zh {
+  font-family: 'Noto Sans HK', sans-serif;
+  font-weight: 700;
+  font-size: 30px;
+  letter-spacing: 0.12em;
+  color: var(--board-black);
+}
+
+/* ---- Shared grid (column labels + every flight row) -------------------- */
+.klabels,
+.krow {
+  display: grid;
+  grid-template-columns:
+    var(--col-airline) var(--col-flight) var(--col-destEN) var(--col-destZH)
+    var(--col-sched) var(--col-checkin) var(--col-status) var(--col-embark)
+    var(--col-lamp);
+  column-gap: var(--col-gap);
+  align-items: center;
+}
+
+/* Bilingual column labels: small, muted, uppercase English over Chinese. */
+.klabels {
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+}
+.klabel {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  color: var(--label-muted);
+}
+.klabel .en {
+  font-family: 'Oswald', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  /* Kai Tak's column captions are lowercase ("flight", "to", "scheduled"…),
+     so no uppercase transform here. */
+}
+.klabel .zh {
+  font-family: 'Noto Sans HK', sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+/* ---- Flight rows ------------------------------------------------------- */
+.rows { display: flex; flex-direction: column; gap: 4px; }
+.krow { padding: 1px 0; }
+
+/* Each grid cell hosts flap cells laid out with no inter-cell whitespace. */
+.kcell { display: flex; align-items: center; font-size: 0; }
+.kcell.airline { justify-content: center; }
+.kcell.lamp    { justify-content: flex-end; }
+
+/* ---- Flap cell theming (override flap.js defaults) --------------------- *
+ * The two-class selectors below (.kaitak .flap-cell) out-specify flap.js's
+ * single-class rules regardless of stylesheet order.                        */
+.kaitak .flap-cell {
+  background: var(--board-black);
+  color: var(--flap-text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 700;
+}
+.kaitak .flap-face { background: var(--flap-face); }
+
+/* Airline card: brand-coloured background, colour set per row via CSS vars. */
+.kaitak .airline .flap-cell,
+.kaitak .airline .flap-face {
+  background: var(--air-bg, var(--flap-face));
+}
+.kaitak .airline .flap-cell { color: var(--air-fg, var(--flap-text)); }
+
+/* Chinese destination card uses the Hong Kong sans face. */
+.kaitak .destzh .flap-cell {
+  font-family: 'Noto Sans HK', sans-serif;
+  font-weight: 700;
+}
+
+/* ---- Boarding lamp ----------------------------------------------------- */
+.lamp {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--lamp-dim);
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+.lamp.lit {
+  background: var(--lamp-red);
+  box-shadow: 0 0 8px 2px rgba(232, 38, 28, 0.8);
+}
+
+/* ---- Stale-data indicator ---------------------------------------------- *
+ * Tiny, dim label tucked into the board's bottom-right corner. Hidden until
+ * data.js adds .is-stale to .board (worker served a cached copy). Kept
+ * deliberately quiet so it never fights the vintage board aesthetic. */
+.stale-indicator {
+  position: absolute;
+  right: 10px;
+  bottom: 5px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: #514d43;
+  opacity: 0;
+  transition: opacity 240ms ease;
+  pointer-events: none;
+}
+.board.is-stale .stale-indicator { opacity: 0.75; }

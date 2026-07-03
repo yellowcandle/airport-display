@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>flap.js self-check</title>
+<style>
+  body { background:#1c1c1c; color:#eee; font-family: "Helvetica Neue", Arial, sans-serif;
+         margin:0; padding:32px; }
+  h1 { font-size:18px; font-weight:600; letter-spacing:.04em; }
+  h2 { font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:#f5c518; margin-top:34px; }
+  .row { display:flex; gap:6px; align-items:center; margin:12px 0; }
+  /* Drum cells: monospace so single glyphs line up. */
+  .drumrow .flap-cell { font-family: "SF Mono", Menlo, Consolas, monospace; font-size:34px; }
+  /* Card cells sized wider for whole strings. */
+  .card-airline { font-family:"SF Mono",Menlo,monospace; font-size:30px; letter-spacing:.05em; }
+  .card-dest { font-family:"PingFang TC","Noto Sans TC",sans-serif; font-size:30px; }
+  button { background:#333; color:#eee; border:1px solid #555; border-radius:5px;
+           padding:7px 12px; margin:4px 6px 4px 0; font-size:13px; cursor:pointer; }
+  button:hover { background:#444; }
+  p.note { color:#999; font-size:12px; max-width:640px; line-height:1.5; }
+  code { color:#f5c518; }
+</style>
+</head>
+<body>
+  <h1>flap.js self-check harness</h1>
+  <p class="note">Open this page in a browser and click through. Expected:
+    (a) drum cells flip through intermediate characters, never jumping;
+    (b) cells in a row settle at visibly different times (a ripple, not lockstep);
+    (c) card cells flip once as a whole unit;
+    (d) clicking the same value twice does nothing the second time;
+    (e) rapid-fire clicks retarget smoothly with no doubled/stuck animation.</p>
+
+  <h2>Drum row (status field, 11 cells)</h2>
+  <div class="row drumrow" id="drumrow"></div>
+  <div>
+    <button data-drum="BOARDING">BOARDING</button>
+    <button data-drum="FINAL CALL">FINAL CALL</button>
+    <button data-drum="GATE CLOSED">GATE CLOSED</button>
+    <button data-drum="EST 12.40">EST 12.40</button>
+    <button data-drum="DEPARTED">DEPARTED</button>
+    <button data-drum="">(clear)</button>
+  </div>
+  <div>
+    <button id="rapid">Rapid retarget (BOARDING→GATE CLOSED→EST 12.40 fast)</button>
+    <button id="same">Set BOARDING twice (idempotency)</button>
+  </div>
+
+  <h2>Card: airline code</h2>
+  <div class="row" id="airlinerow"></div>
+  <div>
+    <button data-air="CX">CX</button>
+    <button data-air="UA">UA</button>
+    <button data-air="BR">BR</button>
+    <button data-air="">(blank)</button>
+  </div>
+
+  <h2>Card: Chinese destination (single flap for the whole name)</h2>
+  <div class="row" id="destrow"></div>
+  <div>
+    <button data-dest="曼谷">曼谷 Bangkok</button>
+    <button data-dest="東京">東京 Tokyo</button>
+    <button data-dest="倫敦">倫敦 London</button>
+    <button data-dest="">(blank)</button>
+  </div>
+
+  <script src="flap.js"></script>
+  <script>
+    // --- Drum row: N single-char cells + a helper to set a whole string ---
+    var DRUM_LEN = 11;
+    var drumCells = [];
+    var drumHost = document.getElementById('drumrow');
+    for (var i = 0; i < DRUM_LEN; i++) {
+      drumCells.push(createFlapCell(drumHost, { mode: 'drum', width: '0.95em', height: '1.4em' }));
+    }
+    function setDrumString(s) {
+      s = (s || '').toUpperCase();
+      for (var i = 0; i < DRUM_LEN; i++) {
+        drumCells[i].setValue(i < s.length ? s[i] : ' ');
+      }
+    }
+
+    // --- Card cells ---
+    var airline = createFlapCell(document.getElementById('airlinerow'),
+      { mode: 'card', className: 'card-airline', width: '2.4em', height: '1.4em' });
+    var dest = createFlapCell(document.getElementById('destrow'),
+      { mode: 'card', className: 'card-dest', width: '4.5em', height: '1.4em' });
+
+    // --- Wire buttons ---
+    document.querySelectorAll('[data-drum]').forEach(function (b) {
+      b.addEventListener('click', function () { setDrumString(b.getAttribute('data-drum')); });
+    });
+    document.querySelectorAll('[data-air]').forEach(function (b) {
+      b.addEventListener('click', function () { airline.setValue(b.getAttribute('data-air')); });
+    });
+    document.querySelectorAll('[data-dest]').forEach(function (b) {
+      b.addEventListener('click', function () { dest.setValue(b.getAttribute('data-dest')); });
+    });
+
+    // (e) rapid retarget: three targets in the same tick — must not stack loops.
+    document.getElementById('rapid').addEventListener('click', function () {
+      setDrumString('BOARDING');
+      setDrumString('GATE CLOSED');
+      setDrumString('EST 12.40'); // final target the row must settle on
+    });
+    // (d) idempotency: second identical set must trigger nothing.
+    document.getElementById('same').addEventListener('click', function () {
+      setDrumString('BOARDING');
+      setDrumString('BOARDING');
+    });
+  </script>
+</body>
+</html>
