@@ -29,8 +29,13 @@
   // ---- Tunables -----------------------------------------------------------
   var POLL_INTERVAL_MS = 60000; // 60s
   var POLL_JITTER_MS = 5000; // +/- 5s, so multiple tabs don't sync on the edge cache boundary
-  var ARRIVED_TTL_MS = 2 * 60 * 1000; // keep an AT GATE (arrived) flight visible ~2 min
+  var TERMINAL_TTL_MS = 2 * 60 * 1000; // keep an AT GATE/LANDED flight visible ~2 min
+  // Statuses HKIA's feed can leave "stuck" on for a long time without ever
+  // flipping to the next state (mirrors departures' GATE CLOSED finding) —
+  // without a TTL these rows never leave the board.
+  var TERMINAL_STATUSES = { 'AT GATE': true, LANDED: true };
   var CASCADE_STAGGER_MS = 150; // per-row stagger below the divergence point
+  var BLANK_HOLD_MS = 350; // blank a row before flipping in its bumped-up content
   var ROTATION_INTERVAL_MS = 10000; // codeshare rotation cadence
 
   // ---- Module state ---------------------------------------------------------
@@ -43,7 +48,7 @@
   var currentItems = []; // transformed items currently shown, aligned to rowEls (or null)
   var isFirstLoad = true;
 
-  var arrivedFirstSeen = new Map(); // flightKey -> ms timestamp first seen AT GATE
+  var terminalFirstSeen = new Map(); // flightKey -> ms timestamp first seen in a terminal status
   var rotationIndex = new Map(); // flightKey -> which codeshare index is currently shown
 
   // ---- Status vocabulary mapping ------------------------------------------
@@ -77,12 +82,6 @@
 
     // Unrecognized status text: surface it uppercased rather than dropping it.
     return { en: s.toUpperCase(), zh: '', time: '', rawTime: '' };
-  }
-
-  // Terminal (fully-arrived) state — the row is done and starts its grace
-  // countdown, mirroring how departures treats "DEPARTED".
-  function isArrived(mappedStatus) {
-    return mappedStatus.en === 'AT GATE';
   }
 
   // ---- Origin lookup (reuses destinations.json) ---------------------------
@@ -177,16 +176,19 @@
 
       if (item.mappedStatus.en === 'CANCELLED') return;
 
-      if (isArrived(item.mappedStatus)) {
-        var firstSeen = arrivedFirstSeen.get(item.key);
+      var statusEn = item.mappedStatus.en;
+      if (TERMINAL_STATUSES[statusEn]) {
+        var firstSeen = terminalFirstSeen.get(item.key);
         if (firstSeen == null) {
-          // Grace period only for flights we were showing when they arrived;
-          // flights already at gate the first time we see them (e.g. this
-          // morning's 00:05 arrivals on page load) drop out immediately.
-          if (previousKeys.indexOf(item.key) === -1) return;
-          arrivedFirstSeen.set(item.key, now);
-        } else if (now - firstSeen > ARRIVED_TTL_MS) {
-          return; // expired off the board
+          // AT GATE flights already done before our first load (e.g. this
+          // morning's 00:05 arrivals) shouldn't appear at all. LANDED is
+          // still current activity, so it's always shown at least once —
+          // HKIA's feed can leave a flight parked on LANDED for many minutes
+          // without ever flipping to At gate HH:MM.
+          if (statusEn === 'AT GATE' && previousKeys.indexOf(item.key) === -1) return;
+          terminalFirstSeen.set(item.key, now);
+        } else if (now - firstSeen > TERMINAL_TTL_MS) {
+          return; // lingered too long in this terminal status
         }
       }
 
@@ -195,8 +197,8 @@
 
     // Housekeeping: drop tracking for flights no longer present at all so the
     // maps don't grow unbounded.
-    arrivedFirstSeen.forEach(function (_, key) {
-      if (!presentKeys[key]) arrivedFirstSeen.delete(key);
+    terminalFirstSeen.forEach(function (_, key) {
+      if (!presentKeys[key]) terminalFirstSeen.delete(key);
     });
     rotationIndex.forEach(function (_, key) {
       if (!presentKeys[key]) rotationIndex.delete(key);
@@ -248,16 +250,16 @@
         // so identical content simply doesn't animate.
         KaiTak.renderRow(rowEls[i], model);
       } else {
-        var delay = CASCADE_STAGGER_MS * (i - divergeIndex);
-        if (delay <= 0) {
-          KaiTak.renderRow(rowEls[i], model);
-        } else {
-          (function (rowEl, rowModel) {
-            setTimeout(function () {
-              KaiTak.renderRow(rowEl, rowModel);
-            }, delay);
-          })(rowEls[i], model);
-        }
+        // Below the removal point: blank the row first, then flip in the
+        // bumped-up content — matches a real board clearing a row before
+        // setting it, rather than flipping straight from the old flight's
+        // chars to the new one's.
+        var blankDelay = CASCADE_STAGGER_MS * (i - divergeIndex);
+        var fillDelay = blankDelay + BLANK_HOLD_MS;
+        (function (rowEl, rowModel) {
+          setTimeout(function () { KaiTak.renderRow(rowEl, {}); }, blankDelay);
+          setTimeout(function () { KaiTak.renderRow(rowEl, rowModel); }, fillDelay);
+        })(rowEls[i], model);
       }
     }
 
