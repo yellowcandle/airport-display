@@ -11,7 +11,13 @@
 // it at the edge for 60s, and falls back to the last cached copy
 // (marked `stale: true`) when the upstream is unreachable.
 
-const HKIA_BASE = "https://www.hongkongairport.com/flightinfo-rest/rest/flights/past";
+// Use the live flight-info endpoint, NOT `/flights/past`. The `/past`
+// (historical archive) variant lags real status by many minutes — it keeps
+// showing "Gate Closed"/"Est at HH:MM" long after a flight has actually
+// departed/landed — and bleeds the previous day into the payload. `/flights`
+// still returns the full current day (including already-departed rows) but
+// with live statuses.
+const HKIA_BASE = "https://www.hongkongairport.com/flightinfo-rest/rest/flights";
 const CACHE_TTL_SECONDS = 60;
 
 export default {
@@ -89,11 +95,16 @@ const ARRIVALS = { arrival: true, trim: trimArrivalRow };
 // date + direction and return its trimmed rows.
 function extractRows(payload, date, dir) {
   const days = Array.isArray(payload) ? payload : [];
-  // Prefer the entry whose date matches today (HKT); fall back to the last
-  // passenger entry the API returned for this direction.
+  // Prefer the entry whose date matches today (HKT). If that misses, fall back
+  // to the MOST RECENT passenger entry for this direction — never the oldest:
+  // the payload spans a couple of days (e.g. arrivals returns yesterday +
+  // today), so picking the first match would show the previous day's flights.
+  const passenger = days
+    .filter((d) => d.arrival === dir.arrival && d.cargo === false)
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)));
   let day =
-    days.find((d) => d.date === date && d.arrival === dir.arrival && d.cargo === false) ||
-    days.find((d) => d.arrival === dir.arrival && d.cargo === false) ||
+    passenger.find((d) => d.date === date) ||
+    passenger[passenger.length - 1] ||
     days[days.length - 1];
   const list = day && Array.isArray(day.list) ? day.list : [];
   return list.map(dir.trim);
