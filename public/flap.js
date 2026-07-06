@@ -45,6 +45,63 @@
     (document.head || document.documentElement).appendChild(s);
   }
 
+  // ---- Flap sound -------------------------------------------------------- *
+  // A synthesized mechanical "clack" per flap (no audio file). Every flap
+  // movement goes through flip(), so one tick there + many cells moving at
+  // once naturally reads as the Solari clatter. Rate-limited so a full-board
+  // flip-in is a dense rattle rather than hundreds of overlapping voices.
+  // Browsers block audio until a user gesture, so the context is created/
+  // resumed on the first pointerdown/keydown; the initial flip-in is silent.
+  var SOUND = (function () {
+    var ctx = null, noiseBuf = null, last = 0, muted = false;
+    try { muted = localStorage.getItem('kaitak-mute') === '1'; } catch (e) {}
+
+    function ensure() {
+      if (ctx) return;
+      var AC = global.AudioContext || global.webkitAudioContext;
+      if (!AC) return;
+      ctx = new AC();
+      // 30ms of front-loaded, decaying white noise — reused for every tick.
+      var n = Math.floor(ctx.sampleRate * 0.03);
+      noiseBuf = ctx.createBuffer(1, n, ctx.sampleRate);
+      var d = noiseBuf.getChannelData(0);
+      for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    }
+
+    function unlock() {
+      ensure();
+      if (ctx && ctx.state === 'suspended') ctx.resume();
+    }
+
+    function tick() {
+      if (muted || !ctx || !noiseBuf) return;
+      var now = ctx.currentTime;
+      if (now - last < 0.012) return; // cap the clatter at ~80 ticks/sec
+      last = now;
+      var src = ctx.createBufferSource();
+      src.buffer = noiseBuf;
+      src.playbackRate.value = 0.85 + Math.random() * 0.5; // slight per-tick variation
+      var lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 2600 + Math.random() * 1200;
+      var g = ctx.createGain();
+      g.gain.value = 0.05 + Math.random() * 0.03;
+      src.connect(lp); lp.connect(g); g.connect(ctx.destination);
+      src.start();
+    }
+
+    function setMuted(m) {
+      muted = !!m;
+      try { localStorage.setItem('kaitak-mute', muted ? '1' : '0'); } catch (e) {}
+      if (!muted) unlock();
+    }
+
+    return {
+      tick: tick, unlock: unlock, setMuted: setMuted,
+      isMuted: function () { return muted; }
+    };
+  })();
+
   // Normalize an input into a single drum character (unknown -> blank space).
   function drumChar(str) {
     if (str == null || str === '') return ' ';
@@ -60,6 +117,7 @@
   // Only ever holds a single pending timer (cleared first, defensively).
   function flip(cell, fromStr, toStr, duration, done) {
     clearTimeout(cell.timer);
+    SOUND.tick(); // one mechanical clack per flap (rate-limited, gesture-gated)
     setFace(cell.frontCh, fromStr); // leaf front = old top half
     setFace(cell.backCh, toStr); // leaf back  = new bottom half
     setFace(cell.topCh, toStr); // reveal new top under the falling leaf
@@ -168,12 +226,20 @@
   }
 
   // A non-flap "logo card" for the airline column. Shows the carrier's real
-  // logo (Aviasales logo CDN, keyed by IATA code) on a light sticker, and
-  // falls back to a brand-coloured 2-letter chip only when the logo actually
-  // fails — unresolved carriers reach the CDN as their 3-letter ICAO code,
-  // which 404s and triggers onerror -> chip. The <img> is shown by default (no
+  // logo (Aviasales logo CDN, keyed by IATA code; LOGO_OVERRIDES supplies
+  // self-hosted art for carriers whose CDN logo is stale) on a light sticker,
+  // and falls back to a brand-coloured 2-letter chip only when the logo
+  // actually fails — unresolved carriers reach the CDN as their 3-letter ICAO
+  // code, which 404s and triggers onerror -> chip. The <img> is shown by
+  // default (no
   // lazy loading: a display:none lazy image never intersects the viewport, so
   // it would never load). Same container/return shape as createFlapCell.
+  // Per-carrier logo overrides: self-hosted art for carriers whose CDN logo is
+  // outdated or off-brand. Keyed by resolved IATA code; add entries as needed.
+  var LOGO_OVERRIDES = {
+    UO: 'logos/hkexpress.svg' // official current HK Express branding (colour variant)
+  };
+
   function createLogoCell(container, opts) {
     opts = opts || {};
     var el = document.createElement('div');
@@ -207,7 +273,8 @@
       el.title = v.name || '';
       if (code) {
         el.classList.remove('no-logo'); // optimistically show the logo
-        img.src = 'https://pics.avs.io/100/50/' + encodeURIComponent(code) + '.png';
+        img.src = LOGO_OVERRIDES[code] ||
+          'https://pics.avs.io/100/50/' + encodeURIComponent(code) + '.png';
       } else {
         el.classList.add('no-logo'); // blank row: no logo, empty chip
         img.removeAttribute('src');
@@ -224,5 +291,34 @@
   createFlapCell.DRUM = DRUM;
   global.createFlapCell = createFlapCell;
   global.createLogoCell = createLogoCell;
+  global.FlapSound = SOUND;
+
+  // ---- Sound wiring (browser only) --------------------------------------- *
+  // Unlock audio on the first user gesture (autoplay policy), and inject a
+  // small mute toggle so the sound is always dismissable. Done here rather
+  // than per-page so both boards (and flap-test) get it from one file.
+  if (typeof document !== 'undefined' && global.addEventListener) {
+    global.addEventListener('pointerdown', SOUND.unlock);
+    global.addEventListener('keydown', SOUND.unlock);
+
+    var injectMuteButton = function () {
+      if (!document.body || document.getElementById('flap-mute')) return;
+      var b = document.createElement('button');
+      b.id = 'flap-mute';
+      b.type = 'button';
+      b.setAttribute('aria-label', 'Toggle flap sound');
+      // Shares the .page-nav pill look (board.css); .mute puts it bottom-left.
+      b.className = 'page-nav mute';
+      var label = function () { b.textContent = SOUND.isMuted() ? '♪ sound off' : '♪ sound on'; };
+      b.addEventListener('click', function () { SOUND.setMuted(!SOUND.isMuted()); label(); });
+      label();
+      document.body.appendChild(b);
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', injectMuteButton);
+    } else {
+      injectMuteButton();
+    }
+  }
   if (typeof module !== 'undefined' && module.exports) module.exports = createFlapCell;
 })(typeof window !== 'undefined' ? window : this);

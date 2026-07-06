@@ -245,26 +245,39 @@ html, body {
 }
 .board.is-stale .stale-indicator { opacity: 0.75; }
 
-/* ---- Cross-page nav link (departures <-> arrivals) --------------------- *
- * Small, muted link fixed in the top-right of the near-black stage, outside
- * the scaled yellow frame so it never distorts with the board. Deliberately
- * quiet so it doesn't fight the vintage look. Shared by both pages. */
+/* ---- HUD controls (page-switch links + sound toggle) ------------------- *
+ * Fixed to the corners of the near-black stage, outside the scaled yellow
+ * frame so they never distort with the board. Styled as small amber pills so
+ * they're clearly legible against the dark stage while still reading as part
+ * of the vintage board. `.page-nav` is the shared base; positional modifiers
+ * place each control in its own corner:
+ *   (default)  top-right  — departures <-> arrivals switch
+ *   .left      top-left   — about link
+ *   .mute      bottom-left — flip-sound toggle (button, injected by flap.js) */
 .page-nav {
   position: fixed;
   top: 12px;
   right: 16px;
   z-index: 10;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 600;
   letter-spacing: 0.08em;
-  color: #6b6656;
+  color: #F3E4BE;
   text-decoration: none;
-  opacity: 0.7;
-  transition: opacity 200ms ease, color 200ms ease;
+  padding: 6px 12px;
+  border: 1px solid rgba(217, 166, 43, 0.6);
+  border-radius: 999px;
+  background: rgba(217, 166, 43, 0.12);
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
 }
 .page-nav:hover,
-.page-nav:focus { opacity: 1; color: var(--frame-yellow); }
-
-/* Second nav link, tucked into the opposite (top-left) corner so it never
- * collides with the departures/arrivals link. Used for the "about" page. */
+.page-nav:focus {
+  color: var(--board-black);
+  background: var(--frame-yellow);
+  border-color: var(--frame-yellow);
+  outline: none;
+}
 .page-nav.left { right: auto; left: 16px; }
+.page-nav.mute { right: auto; left: 16px; top: auto; bottom: 12px; }
