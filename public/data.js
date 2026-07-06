@@ -25,8 +25,14 @@
   var ROW_COUNT = KaiTak.ROW_COUNT;
 
   // ---- Tunables -----------------------------------------------------------
-  var POLL_INTERVAL_MS = 60000; // 60s
-  var POLL_JITTER_MS = 5000; // +/- 5s, so multiple tabs don't sync on the edge cache boundary
+  // Upstream status/times barely change minute-to-minute (HKIA's feed lags
+  // 40-60 min), so fetching every 4 min is plenty fresh and eases upstream
+  // load. Board advancement (evicting stale rows, bumping in the next batch)
+  // is driven separately by RESELECT_INTERVAL_MS below, which re-runs the
+  // wall-clock selection against the last fetch without hitting the network.
+  var POLL_INTERVAL_MS = 4 * 60 * 1000; // 4 min
+  var POLL_JITTER_MS = 15000; // +/- 15s, so multiple tabs don't sync on the edge cache boundary
+  var RESELECT_INTERVAL_MS = 60000; // re-evict/advance against the clock every 60s (no fetch)
   var TERMINAL_TTL_MS = 2 * 60 * 1000; // keep a DEPARTED/GATE CLOSED flight visible ~2 min
   // Statuses HKIA's feed can leave "stuck" on for a long time without ever
   // flipping to the next state (observed: GATE CLOSED sitting unchanged for
@@ -48,6 +54,7 @@
 
   var previousKeys = []; // flight-identity keys currently shown, aligned to rowEls
   var currentItems = []; // transformed items currently shown, aligned to rowEls (or null)
+  var lastItems = []; // last full fetched+mapped item list, for clock-only re-selection
   var isFirstLoad = true;
 
   var terminalFirstSeen = new Map(); // flightKey -> ms timestamp first seen in a terminal status
@@ -326,8 +333,8 @@
       })
       .then(function (data) {
         var rawRows = Array.isArray(data && data.rows) ? data.rows : [];
-        var items = rawRows.map(transformRow);
-        applySelection(selectRows(items, Date.now()));
+        lastItems = rawRows.map(transformRow);
+        applySelection(selectRows(lastItems, Date.now()));
         setStale(data && data.stale);
       })
       .catch(function (err) {
@@ -342,6 +349,13 @@
     setTimeout(function () {
       poll().then(scheduleNextPoll, scheduleNextPoll);
     }, POLL_INTERVAL_MS + jitter);
+  }
+
+  // Re-run the wall-clock selection against the last fetch (no network), so
+  // rows that cross the staleness cutoff evict and the next batch bumps in
+  // promptly between the slower fetches.
+  function reselect() {
+    if (lastItems.length) applySelection(selectRows(lastItems, Date.now()));
   }
 
   // ---- Boot -------------------------------------------------------------------
@@ -384,6 +398,7 @@
     Promise.all([loadDestinations(), loadAirlines()]).then(function () {
       poll().then(scheduleNextPoll, scheduleNextPoll);
       setInterval(rotationTick, ROTATION_INTERVAL_MS);
+      setInterval(reselect, RESELECT_INTERVAL_MS);
     });
 
     // A board left in a background tab gets throttled timers; poll as soon as
