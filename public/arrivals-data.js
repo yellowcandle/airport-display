@@ -34,6 +34,10 @@
   // flipping to the next state (mirrors departures' GATE CLOSED finding) —
   // without a TTL these rows never leave the board.
   var TERMINAL_STATUSES = { 'AT GATE': true, LANDED: true };
+  // Evict any row whose own (possibly revised) time is this far in the past
+  // regardless of status text — mirrors departures' BOARDING/FINAL CALL
+  // finding; the same feed staleness affects arrivals statuses too.
+  var STALE_THRESHOLD_MIN = 60;
   var CASCADE_STAGGER_MS = 150; // per-row stagger below the divergence point
   var BLANK_HOLD_MS = 350; // blank a row before flipping in its bumped-up content
   var ROTATION_INTERVAL_MS = 10000; // codeshare rotation cadence
@@ -125,6 +129,21 @@
     return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
   }
 
+  // Current wall-clock time in Hong Kong, as minutes since midnight —
+  // computed explicitly (not from the device's own clock/timezone) so a
+  // misconfigured display still compares against real HKT.
+  function nowMinutesHKT() {
+    var parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Hong_Kong', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+    }).formatToParts(new Date());
+    var h = 0, m = 0;
+    for (var i = 0; i < parts.length; i++) {
+      if (parts[i].type === 'hour') h = parseInt(parts[i].value, 10);
+      if (parts[i].type === 'minute') m = parseInt(parts[i].value, 10);
+    }
+    return h * 60 + m;
+  }
+
   function transformRow(raw) {
     return {
       key: flightKey(raw),
@@ -167,14 +186,26 @@
   // and excluding flights that have been AT GATE (fully arrived) for more than
   // ~2 minutes — so upcoming/landing flights lead and just-arrived ones linger
   // briefly before cascading off.
+  function effectiveMinutes(item) {
+    var revised = item.mappedStatus.rawTime;
+    return toMinutes(revised || item.raw.scheduled);
+  }
+
   function selectRows(items, now) {
     var presentKeys = Object.create(null);
     var candidates = [];
+    var nowMin = nowMinutesHKT();
 
     items.forEach(function (item) {
       presentKeys[item.key] = true;
 
       if (item.mappedStatus.en === 'CANCELLED') return;
+
+      // Safety net independent of status text: HKIA's feed can stall on any
+      // status for 90+ min without ever updating, not just the tracked
+      // terminal statuses below. Anything this far past its own (possibly
+      // revised) time is stuck data, not a real upcoming arrival.
+      if (nowMin - effectiveMinutes(item) > STALE_THRESHOLD_MIN) return;
 
       var statusEn = item.mappedStatus.en;
       if (TERMINAL_STATUSES[statusEn]) {
@@ -203,11 +234,6 @@
     rotationIndex.forEach(function (_, key) {
       if (!presentKeys[key]) rotationIndex.delete(key);
     });
-
-    function effectiveMinutes(item) {
-      var revised = item.mappedStatus.rawTime;
-      return toMinutes(revised || item.raw.scheduled);
-    }
 
     candidates.sort(function (a, b) {
       return effectiveMinutes(a) - effectiveMinutes(b);
