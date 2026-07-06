@@ -223,14 +223,17 @@ html, body {
 }
 /* Justify the city name across the column (分散對齊), like the reference
  * board: a 2-char name reads 上 … 海 spread to the edges, not centred.
- * text-align-last drives the single line; white-space:normal lets it take
- * effect (names always fit the column, so they never actually wrap). */
+ * text-align-last drives the single (last) line; text-justify:inter-character
+ * is essential for CJK — the default `auto` only stretches at spaces, and
+ * Han names have none, so without it the line falls back to left-aligned.
+ * white-space:normal lets justification apply (names always fit, never wrap). */
 .kaitak .destzh .flap-ch {
   box-sizing: border-box;
   padding: 0 6px;
   white-space: normal;
   text-align: justify;
   text-align-last: justify;
+  text-justify: inter-character;
 }
 
 /* Revised/actual time drums flip in warm signal red — on the real board the
