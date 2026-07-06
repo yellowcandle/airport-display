@@ -93,6 +93,15 @@
     }
   }
 
+  // Chinese city card is a fixed 96px column (~84px usable inside padding).
+  // CJK glyph advance ~= 1em, so up to 4 chars fit at the base 17px; longer
+  // names (e.g. 亞的斯亞貝巴, Addis Ababa) shrink to fit instead of clipping.
+  function fitZh(cell, str) {
+    str = str == null ? '' : String(str);
+    cell.el.style.fontSize = (str.length > 4 ? Math.floor(84 / str.length) : 17) + 'px';
+    cell.setValue(str);
+  }
+
   // Build 9 grid cells + flap cells once; cached on the row element.
   function buildRowCells(rowEl) {
     function child(cls) {
@@ -169,7 +178,7 @@
     c.airline.setValue({ code: model.airline || '', name: model.airlineName || '' });
     setGroup(c.flight, model.flightNo);
     setGroup(c.originEN, model.originEN);
-    c.originZH.setValue(model.originZH || '');
+    fitZh(c.originZH, model.originZH || '');
     setGroup(c.sched, model.scheduled);
     setGroup(c.baggage, model.baggage);
     // Status is plain backlit text, not flaps — set only when changed.
