@@ -151,6 +151,11 @@
     c.airlineEl.style.setProperty('--air-fg', col.fg);
 
     c.airline.setValue(model.airline || '');
+    // Native tooltip: full airline name (from data.js's airlines.json lookup).
+    // flap.js's card cell exposes its DOM node as `.el`; set title there so the
+    // small 2-letter airline card reveals the full carrier name on hover. When
+    // the model carries no name (demo data / unresolved carrier), clear it.
+    c.airline.el.title = model.airlineName || '';
     setGroup(c.flight, model.flightNo);
     setGroup(c.destEN, model.destEN);
     c.destZH.setValue(model.destZH || '');

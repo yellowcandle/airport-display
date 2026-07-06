@@ -1,7 +1,9 @@
-// Kai Tak Departure Board — Cloudflare Worker
+// Kai Tak Departure/Arrival Board — Cloudflare Worker
 //
-// Serves the static board (via the [assets] binding) and proxies live
-// Hong Kong International Airport departures at GET /api/departures.
+// Serves the static boards (via the [assets] binding) and proxies live
+// Hong Kong International Airport flights:
+//   GET /api/departures  — passenger departures (arrival=false)
+//   GET /api/arrivals    — passenger arrivals   (arrival=true)
 //
 // Why a proxy: the HKIA flight-info API returns 403 to any request that
 // carries an `Origin` header, so a browser can never call it directly.
@@ -17,10 +19,13 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/departures") {
-      return handleDepartures(request, ctx);
+      return handleFlights(ctx, DEPARTURES);
+    }
+    if (url.pathname === "/api/arrivals") {
+      return handleFlights(ctx, ARRIVALS);
     }
 
-    // Anything else is a static asset (index.html, board.js, destinations.json…).
+    // Anything else is a static asset (index.html, board.js, arrivals.html…).
     if (env.ASSETS) {
       return env.ASSETS.fetch(request);
     }
@@ -41,12 +46,12 @@ function hktDate(now = new Date()) {
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
-function upstreamUrl(date) {
-  return `${HKIA_BASE}?date=${date}&lang=en&cargo=false&arrival=false`;
+function upstreamUrl(date, arrival) {
+  return `${HKIA_BASE}?date=${date}&lang=en&cargo=false&arrival=${arrival}`;
 }
 
-// Trim one upstream list item down to the fields the board renders.
-function trimRow(item) {
+// Trim one upstream departure item down to the fields the board renders.
+function trimDepartureRow(item) {
   return {
     flights: Array.isArray(item.flight) ? item.flight : [],
     destIata: Array.isArray(item.destination) ? item.destination[0] : undefined,
@@ -58,27 +63,49 @@ function trimRow(item) {
   };
 }
 
-// Given the upstream response (an array of {date, arrival, cargo, list}
-// objects spanning a couple of days), pick the entry matching today's HKT
-// date and return its trimmed rows.
-function extractRows(payload, date) {
-  const days = Array.isArray(payload) ? payload : [];
-  // Prefer the entry whose date matches today (HKT); fall back to the last
-  // passenger-departure entry the API returned.
-  let day =
-    days.find((d) => d.date === date && d.arrival === false && d.cargo === false) ||
-    days.find((d) => d.arrival === false && d.cargo === false) ||
-    days[days.length - 1];
-  const list = day && Array.isArray(day.list) ? day.list : [];
-  return list.map(trimRow);
+// Trim one upstream arrival item down to the fields the arrivals board renders.
+// The arrival API uses `origin` (port of origin) in place of departures'
+// `destination`, and carries `baggage` (reclaim belt), `hall` (arrival hall),
+// and `stand` (parking stand) instead of departures' `aisle`/`gate`.
+function trimArrivalRow(item) {
+  return {
+    flights: Array.isArray(item.flight) ? item.flight : [],
+    originIata: Array.isArray(item.origin) ? item.origin[0] : undefined,
+    scheduled: item.time,
+    terminal: item.terminal,
+    baggage: item.baggage,
+    hall: item.hall,
+    stand: item.stand,
+    status: item.status,
+  };
 }
 
-async function handleDepartures(request, ctx) {
+// Direction descriptors: everything that differs between the two endpoints.
+const DEPARTURES = { arrival: false, trim: trimDepartureRow };
+const ARRIVALS = { arrival: true, trim: trimArrivalRow };
+
+// Given the upstream response (an array of {date, arrival, cargo, list}
+// objects spanning a couple of days), pick the entry matching today's HKT
+// date + direction and return its trimmed rows.
+function extractRows(payload, date, dir) {
+  const days = Array.isArray(payload) ? payload : [];
+  // Prefer the entry whose date matches today (HKT); fall back to the last
+  // passenger entry the API returned for this direction.
+  let day =
+    days.find((d) => d.date === date && d.arrival === dir.arrival && d.cargo === false) ||
+    days.find((d) => d.arrival === dir.arrival && d.cargo === false) ||
+    days[days.length - 1];
+  const list = day && Array.isArray(day.list) ? day.list : [];
+  return list.map(dir.trim);
+}
+
+// Shared fetch/cache/stale-fallback pipeline, parameterized by direction.
+async function handleFlights(ctx, dir) {
   const date = hktDate();
-  const target = upstreamUrl(date);
+  const target = upstreamUrl(date, dir.arrival);
   const cache = caches.default;
-  // Cache key is the upstream URL (stable per date+lang), independent of the
-  // incoming request URL so all board tabs share one cached copy.
+  // Cache key is the upstream URL (stable per date+lang+direction), independent
+  // of the incoming request URL so all board tabs share one cached copy.
   const cacheKey = new Request(target, { method: "GET" });
 
   // 1) Fresh cache hit → serve immediately.
@@ -97,7 +124,7 @@ async function handleDepartures(request, ctx) {
       throw new Error(`Upstream ${upstream.status}`);
     }
     const payload = await upstream.json();
-    const rows = extractRows(payload, date);
+    const rows = extractRows(payload, date, dir);
     const body = JSON.stringify({ rows, stale: false });
 
     const response = jsonResponse(body, {

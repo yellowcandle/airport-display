@@ -1,0 +1,27 @@
+/*
+ * arrivals-board.css — Kai Tak "AIRCRAFT ARRIVALS" board.
+ *
+ * Loaded AFTER board.css, which supplies the whole shared skin (frame,
+ * header, flap-cell theming under `.kaitak`, boarding lamp, stale indicator,
+ * cross-page nav link). This file only overrides the column grid for the
+ * arrivals layout — arrivals drop the departures-only "check-in" and
+ * "embark" columns and add a "baggage" (reclaim belt) column. The arrivals
+ * board element carries `class="board kaitak arrivals"`, so every `.kaitak`
+ * rule from board.css still applies; the two-class `.arrivals .krow`
+ * selector below out-specifies board.css's single-class grid rule.
+ */
+
+:root {
+  /* Arrivals column widths = (slot count × --cw), matching the slot counts in
+     arrivals-board.js. --cw / --ch / --col-gap / card widths inherit from
+     board.css. */
+  --col-arr-baggage: calc(3 * var(--cw)); /* 60 — belt e.g. "14", room for "B3" */
+  --col-arr-status:  calc(13 * var(--cw)); /* 260 — fits "AT GATE 11.53" */
+}
+
+.arrivals .klabels,
+.arrivals .krow {
+  grid-template-columns:
+    var(--col-airline) var(--col-flight) var(--col-destEN) var(--col-destZH)
+    var(--col-sched) var(--col-arr-baggage) var(--col-arr-status) var(--col-lamp);
+}

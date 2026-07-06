@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>啟德機場離港班機 · Kai Tak Aircraft Departures</title>
+    <title>啟德機場抵港班機 · Kai Tak Aircraft Arrivals</title>
 
     <!-- Fonts: IBM Plex Mono (drum cells), Noto Sans HK (Chinese), Oswald (header). -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -13,55 +13,55 @@
       rel="stylesheet"
     />
 
+    <!-- board.css supplies the shared Kai Tak skin; arrivals-board.css overrides
+         only the column grid for the arrivals layout. -->
     <link rel="stylesheet" href="board.css" />
+    <link rel="stylesheet" href="arrivals-board.css" />
   </head>
   <body>
-    <a class="page-nav" href="arrivals.html">抵港 arrivals &rarr;</a>
+    <a class="page-nav" href="index.html">&larr; departures 離港</a>
     <div class="stage">
       <div class="frame" id="frame">
-        <!-- Bilingual header — printed in black on the yellow frame, as on the
-             real Kai Tak board (see reference photos). -->
+        <!-- Bilingual header — printed in black on the yellow frame, mirroring
+             the departures board. -->
         <div class="header">
-          <div class="title-en">Aircraft Departures</div>
-          <div class="title-zh">離港班機</div>
+          <div class="title-en">Aircraft Arrivals</div>
+          <div class="title-zh">抵港班機</div>
         </div>
 
-        <div class="board kaitak">
+        <div class="board kaitak arrivals">
           <!-- Bilingual column labels (aligned to the same grid as the rows). -->
           <div class="klabels">
             <div class="klabel" style="grid-column: 2">
               <span class="en">flight</span><span class="zh">班機</span>
             </div>
             <div class="klabel" style="grid-column: 3 / span 2">
-              <span class="en">to</span><span class="zh">前往</span>
+              <span class="en">from</span><span class="zh">來自</span>
             </div>
             <div class="klabel" style="grid-column: 5">
               <span class="en">scheduled</span><span class="zh">預定時間</span>
             </div>
             <div class="klabel" style="grid-column: 6">
-              <span class="en">check-in</span><span class="zh">行李託運</span>
+              <span class="en">baggage</span><span class="zh">行李帶</span>
             </div>
             <div class="klabel" style="grid-column: 7">
               <span class="en">status</span><span class="zh">情況</span>
             </div>
-            <div class="klabel" style="grid-column: 8">
-              <span class="en">embark</span><span class="zh">入閘時間</span>
-            </div>
           </div>
 
-          <!-- Flight rows are injected here by board.js. -->
+          <!-- Flight rows are injected here by arrivals-board.js. -->
           <div id="rows" class="rows"></div>
 
           <!-- Subtle stale-data indicator; shown only while .board has
-               .is-stale (toggled by data.js when the worker serves a cached
-               copy because the HKIA upstream was unreachable). -->
+               .is-stale (toggled by arrivals-data.js when the worker serves a
+               cached copy because the HKIA upstream was unreachable). -->
           <div class="stale-indicator" aria-hidden="true">· stale ·</div>
         </div>
       </div>
     </div>
 
     <script src="flap.js"></script>
-    <script src="board.js"></script>
-    <script src="data.js"></script>
+    <script src="arrivals-board.js"></script>
+    <script src="arrivals-data.js"></script>
   </body>
 </html>
