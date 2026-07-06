@@ -5,17 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>啟德機場離港班機 · Kai Tak Aircraft Departures</title>
 
-    <!-- Fonts: IBM Plex Mono (drum cells), Noto Sans HK (Chinese), Oswald (header). -->
+    <!-- Fonts: IBM Plex Mono (drum cells), Free HK Kai (self-hosted kaiti, board.css @font-face), Oswald (header). -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600;700&family=Noto+Sans+HK:wght@600;700&family=Oswald:wght@600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600;700&family=Oswald:wght@600;700&display=swap"
       rel="stylesheet"
     />
 
     <link rel="stylesheet" href="board.css" />
   </head>
   <body>
+    <a class="page-nav left" href="about.html">&#9432; about 關於</a>
     <a class="page-nav" href="arrivals.html">抵港 arrivals &rarr;</a>
     <div class="stage">
       <div class="frame" id="frame">
@@ -39,13 +40,13 @@
               <span class="en">scheduled</span><span class="zh">預定時間</span>
             </div>
             <div class="klabel" style="grid-column: 6">
-              <span class="en">check-in</span><span class="zh">行李託運</span>
+              <span class="en">gate</span><span class="zh">閘口</span>
             </div>
             <div class="klabel" style="grid-column: 7">
               <span class="en">status</span><span class="zh">情況</span>
             </div>
             <div class="klabel" style="grid-column: 8">
-              <span class="en">embark</span><span class="zh">入閘時間</span>
+              <span class="en">departure</span><span class="zh">離港時間</span>
             </div>
           </div>
 
@@ -63,5 +64,13 @@
     <script src="flap.js"></script>
     <script src="board.js"></script>
     <script src="data.js"></script>
+    <!-- Space / arrow keys / A / D flip between the departures and arrivals boards. -->
+    <script>
+      addEventListener('keydown', function (e) {
+        if ([' ', 'ArrowLeft', 'ArrowRight', 'a', 'd'].indexOf(e.key) >= 0) {
+          location.href = 'arrivals.html';
+        }
+      });
+    </script>
   </body>
 </html>

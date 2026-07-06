@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>啟德機場 · About Kai Tak Board</title>
+
+    <!-- Fonts: IBM Plex Mono (labels), Free HK Kai (self-hosted kaiti, board.css @font-face), Oswald (headings). -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600;700&family=Oswald:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- board.css supplies the shared skin (frame, palette, fonts, page-nav);
+         the inline block below styles only the about page's prose. -->
+    <link rel="stylesheet" href="board.css" />
+    <style>
+      /* The about "board" scrolls with its content rather than being scaled to
+         the viewport like the flight boards. board.css pins html/body/.stage to
+         the viewport height and clips overflow; undo all of that here so the
+         document scrolls naturally when the content is taller than the screen. */
+      html, body { height: auto; overflow: visible; }
+      .stage {
+        align-items: flex-start;
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
+        padding: 40px 16px;
+        box-sizing: border-box;
+      }
+      .about { max-width: 620px; padding: 30px 34px 34px; }
+
+      .about .header { flex-direction: column; align-items: flex-start; gap: 2px; }
+
+      .about section { margin-top: 22px; }
+      .about h2 {
+        margin: 0 0 8px;
+        font-family: 'Oswald', 'Helvetica Neue', Arial, sans-serif;
+        font-weight: 600;
+        font-size: 17px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--frame-yellow);
+      }
+      .about h2 .zh {
+        font-family: 'Free HK Kai', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', serif;
+        font-weight: 600;
+        font-size: 15px;
+        letter-spacing: 0.08em;
+        margin-left: 8px;
+        color: var(--label-muted);
+        text-transform: none;
+      }
+      .about p {
+        margin: 0 0 10px;
+        font-family: 'IBM Plex Mono', monospace;
+        font-weight: 600;
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--flap-text);
+      }
+      /* Chinese paragraph: kaiti brush face, sits just under its English twin,
+         slightly dimmer so the pair reads as one bilingual block. */
+      .about p.zh {
+        font-family: 'Free HK Kai', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', serif;
+        font-size: 14px;
+        line-height: 1.75;
+        letter-spacing: 0.03em;
+        color: var(--label-muted);
+        margin-bottom: 14px;
+      }
+      .about a { color: var(--frame-yellow); text-decoration: none; border-bottom: 1px solid rgba(217, 166, 43, 0.4); }
+      .about a:hover { border-bottom-color: var(--frame-yellow); }
+
+      /* Keyboard-control keycaps rendered as little flap faces. */
+      .keys { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 10px; }
+      .keys kbd {
+        font-family: 'IBM Plex Mono', monospace;
+        font-weight: 700;
+        font-size: 12px;
+        color: var(--flap-text);
+        background: var(--flap-face);
+        border-radius: 3px;
+        padding: 5px 9px;
+        box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.5);
+      }
+
+      .about .foot {
+        margin-top: 26px;
+        padding-top: 14px;
+        border-top: 1px solid #2a2a2a;
+        font-size: 11px;
+        color: var(--label-muted);
+        letter-spacing: 0.04em;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="page-nav" href="index.html">&larr; departures 離港</a>
+    <div class="stage">
+      <div class="frame">
+        <div class="header">
+          <div class="title-en">About the Board</div>
+          <div class="title-zh">關於此板</div>
+        </div>
+
+        <div class="board kaitak about">
+          <section>
+            <p>
+              A web recreation of the split-flap
+              &ldquo;AIRCRAFT&nbsp;DEPARTURES&nbsp;/&nbsp;離港班機&rdquo;
+              board from Hong Kong&rsquo;s old Kai Tak Airport, driven by
+              <em>live</em> Hong Kong International Airport data &mdash; real
+              flights, gates, and codeshares flipping through today&rsquo;s
+              schedule as they would have in the 1990s.
+            </p>
+            <p class="zh">
+              這是香港舊啟德機場「離港班機」翻牌顯示板的網頁重現，以香港國際機場的
+              <em>即時</em>航班資料驅動 &mdash;
+              真實的航班、閘口與聯營班號，如同九十年代一樣，隨着今天的時刻表翻動。
+            </p>
+          </section>
+
+          <section>
+            <h2>Kai Tak <span class="zh">啟德機場</span></h2>
+            <p>
+              Kai Tak was Hong Kong&rsquo;s international airport from 1925
+              until 6&nbsp;July&nbsp;1998, famous for its heart-stopping
+              &ldquo;checkerboard&rdquo; approach over Kowloon rooftops to a
+              single runway jutting into the harbour. It closed overnight when
+              operations moved to Chek Lap Kok. This board is a tribute to the
+              departures hall that sent so many off.
+            </p>
+            <p class="zh">
+              啟德機場自一九二五年起擔任香港的國際機場，直至一九九八年七月六日。
+              它以驚險的「棋盤山」降落聞名 &mdash;
+              飛機低掠九龍屋頂，降落於伸進維港的單一跑道。機場於一夜之間關閉，
+              運作遷往赤鱲角。此板謹向那個送別無數旅人的離境大堂致敬。
+            </p>
+          </section>
+
+          <section>
+            <h2>Controls <span class="zh">操作</span></h2>
+            <p>Flip between the departures and arrivals boards:</p>
+            <p class="zh">在離港與抵港顯示板之間切換：</p>
+            <div class="keys">
+              <kbd>Space</kbd><kbd>&larr;</kbd><kbd>&rarr;</kbd><kbd>A</kbd><kbd>D</kbd>
+            </div>
+            <p>
+              Both boards poll live every 60 seconds and re-fetch the moment
+              their browser tab returns to the foreground.
+            </p>
+            <p class="zh">
+              兩塊板每六十秒讀取一次即時資料，並在瀏覽器分頁重新顯示時立即更新。
+            </p>
+          </section>
+
+          <section>
+            <h2>Data &amp; credit <span class="zh">資料來源</span></h2>
+            <p>
+              Flight data comes from the Hong Kong International Airport flight
+              information API, operated by the Airport Authority Hong Kong and
+              published as open data via
+              <a href="https://data.gov.hk/en-data/dataset/aahk-team1-flight-info" target="_blank" rel="noopener">data.gov.hk</a>.
+              It is free and requires no key.
+            </p>
+            <p class="zh">
+              航班資料來自香港國際機場的航班資訊系統，由香港機場管理局營運，
+              並透過
+              <a href="https://data.gov.hk/tc-data/dataset/aahk-team1-flight-info" target="_blank" rel="noopener">資料一線通</a>
+              以公開資料形式發布，免費且無需密鑰。
+            </p>
+            <p>
+              The kaiti (楷書) Chinese type is
+              <a href="https://freehkfonts.opensource.hk" target="_blank" rel="noopener">Free&nbsp;HK&nbsp;Kai</a>
+              (自由香港楷書), an open font by a group of Hong Kong elders.
+            </p>
+            <p class="zh">
+              中文楷書字型為
+              <a href="https://freehkfonts.opensource.hk" target="_blank" rel="noopener">自由香港楷書</a>，
+              由一群香港長者發起的開源字體項目。
+            </p>
+          </section>
+
+          <section>
+            <h2>How it works <span class="zh">技術</span></h2>
+            <p>
+              A Cloudflare Worker serves the static board and proxies the HKIA
+              API server-side &mdash; the upstream returns 403 to any request
+              carrying an <code>Origin</code> header, so a browser cannot call
+              it directly. The Worker trims and edge-caches the payload for
+              60&nbsp;seconds. No framework, no build step.
+            </p>
+            <p class="zh">
+              一個 Cloudflare Worker 負責提供靜態頁面，並在伺服器端代理機管局的
+              API &mdash; 上游對任何帶有 <code>Origin</code> 標頭的請求都回應
+              403，故瀏覽器無法直接呼叫。Worker 精簡資料並於邊緣快取六十秒，
+              不用框架，亦無建置步驟。
+            </p>
+          </section>
+
+          <div class="foot">
+            An unofficial tribute, not affiliated with or endorsed by the
+            Airport Authority Hong Kong.<br />
+            非官方作品，與香港機場管理局並無關聯，亦未獲其認可。
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- No keyboard-nav handler here (unlike the flight boards): this is a
+         scrollable reading page, so Space / arrow keys must scroll, not flip. -->
+  </body>
+</html>

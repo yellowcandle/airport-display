@@ -53,39 +53,34 @@
   // Cancelled/Delayed/Diverted are handled defensively (not seen in the
   // sample but plausible and cheap to cover). AT GATE is the terminal state,
   // the arrivals analogue of departures' "Dep HH:MM".
+  // Returns a bilingual status label plus an optional red-column time string:
+  // { en, zh, time } where `time` is a "H.MM" actual/estimated arrival time (for
+  // the red arrival-time drums) or '' when the status carries no time.
   function mapStatus(raw) {
     var s = raw == null ? '' : String(raw).trim();
-    if (s === '') return '';
+    if (s === '') return { en: '', zh: '', time: '' };
     var lower = s.toLowerCase();
+    var m = s.match(/(\d{1,2}:\d{2})/);
+    var time = m ? KaiTak.formatTime(m[1]) : '';
 
-    if (lower.indexOf('cancel') === 0) return 'CANCELLED';
-    if (lower.indexOf('divert') === 0) return 'DIVERTED';
-    if (lower.indexOf('delay') === 0) return 'DELAYED';
-
-    // "At gate 11:53" / "At gate 23:38 (05/07/2026)" -> "AT GATE 11.53"
-    if (lower.indexOf('at gate') === 0) {
-      var mg = s.match(/(\d{1,2}:\d{2})/);
-      return 'AT GATE' + (mg ? ' ' + KaiTak.formatTime(mg[1]) : '');
-    }
-    // "Landed 07:32" -> "LANDED 7.32"
-    if (lower.indexOf('landed') === 0) {
-      var ml = s.match(/(\d{1,2}:\d{2})/);
-      return 'LANDED' + (ml ? ' ' + KaiTak.formatTime(ml[1]) : '');
-    }
-    // "Est at 08:37" -> "EST 8.37"
-    if (lower.indexOf('est') === 0) {
-      var me = s.match(/(\d{1,2}:\d{2})/);
-      return 'EST ' + (me ? KaiTak.formatTime(me[1]) : '');
-    }
+    if (lower.indexOf('cancel') === 0) return { en: 'CANCELLED', zh: '取消', time: '' };
+    if (lower.indexOf('divert') === 0) return { en: 'DIVERTED', zh: '轉飛', time: '' };
+    // "At gate 11:53" / "At gate 23:38 (05/07/2026)"
+    if (lower.indexOf('at gate') === 0) return { en: 'AT GATE', zh: '已到閘', time: time };
+    // "Landed 07:32"
+    if (lower.indexOf('landed') === 0) return { en: 'LANDED', zh: '已降落', time: time };
+    // "Est at 08:37"
+    if (lower.indexOf('est') === 0) return { en: 'DELAYED', zh: '延遲', time: time };
+    if (lower.indexOf('delay') === 0) return { en: 'DELAYED', zh: '延遲', time: '' };
 
     // Unrecognized status text: surface it uppercased rather than dropping it.
-    return s.toUpperCase();
+    return { en: s.toUpperCase(), zh: '', time: '' };
   }
 
   // Terminal (fully-arrived) state — the row is done and starts its grace
   // countdown, mirroring how departures treats "DEPARTED".
   function isArrived(mappedStatus) {
-    return mappedStatus.indexOf('AT GATE') === 0;
+    return mappedStatus.en === 'AT GATE';
   }
 
   // ---- Origin lookup (reuses destinations.json) ---------------------------
@@ -145,6 +140,7 @@
     var chosen = flights[flightIndex] || flights[0] || {};
     var origin = lookupOrigin(raw.originIata);
     var air = lookupAirline(chosen.airline);
+    var status = item.mappedStatus;
 
     return {
       // Display the resolved short IATA code (e.g. ICAO "CPA" -> "CX"); the raw
@@ -157,8 +153,11 @@
       scheduled: KaiTak.formatTime(raw.scheduled),
       // Reclaim belt (e.g. "14"); blank until assigned.
       baggage: raw.baggage == null ? '' : String(raw.baggage),
-      status: item.mappedStatus,
-      lamp: KaiTak.isLampLit(item.mappedStatus),
+      statusEN: status.en,
+      statusZH: status.zh,
+      // Actual/estimated arrival time for the red drums; '' when none.
+      arrtime: status.time,
+      lamp: KaiTak.isLampLit(status.en),
     };
   }
 
@@ -174,15 +173,19 @@
     items.forEach(function (item) {
       presentKeys[item.key] = true;
 
-      if (item.mappedStatus === 'CANCELLED') return;
+      if (item.mappedStatus.en === 'CANCELLED') return;
 
       if (isArrived(item.mappedStatus)) {
         var firstSeen = arrivedFirstSeen.get(item.key);
         if (firstSeen == null) {
-          firstSeen = now;
-          arrivedFirstSeen.set(item.key, firstSeen);
+          // Grace period only for flights we were showing when they arrived;
+          // flights already at gate the first time we see them (e.g. this
+          // morning's 00:05 arrivals on page load) drop out immediately.
+          if (previousKeys.indexOf(item.key) === -1) return;
+          arrivedFirstSeen.set(item.key, now);
+        } else if (now - firstSeen > ARRIVED_TTL_MS) {
+          return; // expired off the board
         }
-        if (now - firstSeen > ARRIVED_TTL_MS) return; // expired off the board
       }
 
       candidates.push(item);
@@ -344,6 +347,12 @@
     Promise.all([loadOrigins(), loadAirlines()]).then(function () {
       poll().then(scheduleNextPoll, scheduleNextPoll);
       setInterval(rotationTick, ROTATION_INTERVAL_MS);
+    });
+
+    // A board left in a background tab gets throttled timers; poll as soon as
+    // it's visible again rather than waiting out the remainder of the cycle.
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) poll();
     });
   }
 

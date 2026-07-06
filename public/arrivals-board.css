@@ -16,12 +16,14 @@
      arrivals-board.js. --cw / --ch / --col-gap / card widths inherit from
      board.css. */
   --col-arr-baggage: calc(3 * var(--cw)); /* 60 — belt e.g. "14", room for "B3" */
-  --col-arr-status:  calc(13 * var(--cw)); /* 260 — fits "AT GATE 11.53" */
+  --col-arr-status:  150px;               /* small backlit bilingual status text */
+  --col-arr-time:    calc(5 * var(--cw)); /* 100 — red actual/estimated time drums */
 }
 
 .arrivals .klabels,
 .arrivals .krow {
   grid-template-columns:
     var(--col-airline) var(--col-flight) var(--col-destEN) var(--col-destZH)
-    var(--col-sched) var(--col-arr-baggage) var(--col-arr-status) var(--col-lamp);
+    var(--col-sched) var(--col-arr-baggage) var(--col-arr-status) var(--col-arr-time)
+    var(--col-lamp);
 }

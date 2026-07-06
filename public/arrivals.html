@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>啟德機場抵港班機 · Kai Tak Aircraft Arrivals</title>
 
-    <!-- Fonts: IBM Plex Mono (drum cells), Noto Sans HK (Chinese), Oswald (header). -->
+    <!-- Fonts: IBM Plex Mono (drum cells), Free HK Kai (self-hosted kaiti, board.css @font-face), Oswald (header). -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600;700&family=Noto+Sans+HK:wght@600;700&family=Oswald:wght@600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600;700&family=Oswald:wght@600;700&display=swap"
       rel="stylesheet"
     />
 
@@ -20,6 +20,7 @@
   </head>
   <body>
     <a class="page-nav" href="index.html">&larr; departures 離港</a>
+    <a class="page-nav left" href="about.html">&#9432; about 關於</a>
     <div class="stage">
       <div class="frame" id="frame">
         <!-- Bilingual header — printed in black on the yellow frame, mirroring
@@ -47,6 +48,9 @@
             <div class="klabel" style="grid-column: 7">
               <span class="en">status</span><span class="zh">情況</span>
             </div>
+            <div class="klabel" style="grid-column: 8">
+              <span class="en">arrival</span><span class="zh">抵港時間</span>
+            </div>
           </div>
 
           <!-- Flight rows are injected here by arrivals-board.js. -->
@@ -63,5 +67,13 @@
     <script src="flap.js"></script>
     <script src="arrivals-board.js"></script>
     <script src="arrivals-data.js"></script>
+    <!-- Space / arrow keys / A / D flip between the departures and arrivals boards. -->
+    <script>
+      addEventListener('keydown', function (e) {
+        if ([' ', 'ArrowLeft', 'ArrowRight', 'a', 'd'].indexOf(e.key) >= 0) {
+          location.href = 'index.html';
+        }
+      });
+    </script>
   </body>
 </html>

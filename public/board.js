@@ -2,26 +2,25 @@
  * board.js — Kai Tak departure board rendering + layout.
  *
  * Task 3.x scope: build the 12-row grid, compose each row's flap cells with
- * flap.js, drive them with STATIC demo data, format times as `H.MM`, and scale
- * the whole board to fit the viewport.
+ * flap.js, drive STATIC demo data, format times as `H.MM`, and scale the
+ * whole board to fit the viewport.
  *
  * Reusable seam for task 4.x (live data): the data layer only needs to build a
- * display model per row and call `renderRow(rowEl, model)`. The time/embark/lamp
+ * display model per row and call `renderRow(rowEl, model)`. The time/lamp
  * helpers below are exported on `window.KaiTak` so the data layer can reuse them.
  * `renderRow` is idempotent per cell (flap.setValue no-ops on equal values), so
- * re-calling it with changed fields flips only the cells that actually changed.
+ * re-calling with changed fields flips only the cells that actually changed.
  */
 (function (global) {
   'use strict';
 
   // ---- Layout constants -------------------------------------------------
-  // Slot counts must match the column widths in board.css (:root --col-*).
+  // Slot counts match the column widths in board.css (:root --col-*).
   var FLIGHT_SLOTS = 7;
-  var DEST_EN_SLOTS = 13;
+  var DEST_EN_SLOTS = 10;
   var SCHED_SLOTS = 5;
-  var CHECKIN_SLOTS = 5;
-  var STATUS_SLOTS = 12;
-  var EMBARK_SLOTS = 5;
+  var GATE_SLOTS = 3;        // HKIA gate e.g. "216"
+  var DEPARTURE_SLOTS = 5;   // revised/actual departure time, red drums
   var ROW_COUNT = 12;
 
   // Drum cell geometry (CELL.w must equal --cw in board.css).
@@ -52,19 +51,7 @@
     return String(parseInt(m[1], 10)) + '.' + m[2];
   }
 
-  // Embark time = scheduled − 55 minutes, formatted "H.MM" (e.g. 9:10 -> 8.15).
-  function computeEmbark(hhmm) {
-    if (hhmm == null) return '';
-    var m = String(hhmm).match(/^(\d{1,2}):(\d{2})$/);
-    if (!m) return '';
-    var total = parseInt(m[1], 10) * 60 + parseInt(m[2], 10) - 55;
-    total = ((total % 1440) + 1440) % 1440; // wrap across midnight
-    var h = Math.floor(total / 60);
-    var mm = total % 60;
-    return h + '.' + (mm < 10 ? '0' + mm : '' + mm);
-  }
-
-  // Lamp lit only for boarding / final call statuses.
+  // Lamp lit only on boarding / final call statuses.
   function isLampLit(status) {
     if (!status) return false;
     var s = String(status).toUpperCase();
@@ -83,7 +70,7 @@
     return arr;
   }
 
-  // Fan a string across a row of drum cells; missing positions flip to blank.
+  // Fan a string across row drum cells; missing positions flip to blank.
   function setGroup(arr, str) {
     str = str == null ? '' : String(str);
     for (var i = 0; i < arr.length; i++) {
@@ -91,7 +78,7 @@
     }
   }
 
-  // Build the 9 grid cells + their flap cells once; cached on the row element.
+  // Build 9 grid cells + flap cells once; cached on the row element.
   function buildRowCells(rowEl) {
     function child(cls) {
       var d = document.createElement('div');
@@ -104,10 +91,19 @@
     var destENEl = child('destEN');
     var destZHEl = child('destzh');
     var schedEl = child('sched');
-    var checkinEl = child('checkin');
+    var gateEl = child('gate');
     var statusEl = child('status');
-    var embarkEl = child('embark');
+    var departureEl = child('departure');
     var lampEl = child('lamp');
+
+    // Status is small backlit bilingual text (not flap cells), per the photo:
+    // two spans (English over Chinese) built once and updated as plain text.
+    var statusEn = document.createElement('span');
+    statusEn.className = 'st-en';
+    var statusZh = document.createElement('span');
+    statusZh.className = 'st-zh';
+    statusEl.appendChild(statusEn);
+    statusEl.appendChild(statusZh);
 
     var lamp = document.createElement('span');
     lamp.className = 'lamp';
@@ -115,8 +111,8 @@
 
     return {
       airlineEl: airlineEl,
-      airline: global.createFlapCell(airlineEl, {
-        mode: 'card', width: '50px', height: '26px', fontSize: '16px', className: 'airline-card'
+      airline: global.createLogoCell(airlineEl, {
+        width: '50px', height: '26px', className: 'airline-card'
       }),
       flight: makeDrumGroup(flightEl, FLIGHT_SLOTS),
       destEN: makeDrumGroup(destENEl, DEST_EN_SLOTS),
@@ -124,66 +120,71 @@
         mode: 'card', width: '80px', height: '26px', fontSize: '17px', className: 'zh-card'
       }),
       sched: makeDrumGroup(schedEl, SCHED_SLOTS),
-      checkin: makeDrumGroup(checkinEl, CHECKIN_SLOTS),
-      status: makeDrumGroup(statusEl, STATUS_SLOTS),
-      embark: makeDrumGroup(embarkEl, EMBARK_SLOTS),
+      gate: makeDrumGroup(gateEl, GATE_SLOTS),
+      statusEn: statusEn,
+      statusZh: statusZh,
+      departure: makeDrumGroup(departureEl, DEPARTURE_SLOTS),
       lamp: lamp
     };
   }
 
   /*
-   * renderRow(rowEl, model) — the reusable seam for task 4.
+   * renderRow(rowEl, model) — reusable seam for task 4.
    *
-   * `model` is a display view-model (all fields already formatted):
-   *   { airline:'CX', flightNo:'CX 713', destEN:'BANGKOK', destZH:'曼谷',
-   *     scheduled:'9.10', checkin:'T1 C', status:'BOARDING',
-   *     embark:'8.15', lamp:true }
+   * `model` is the display view-model (all fields already formatted):
+   *   { airline:'CX', airlineName:'Cathay Pacific', flightNo:'CX 713',
+   *     destEN:'BANGKOK', destZH:'曼谷', scheduled:'9.10', gate:'216',
+   *     statusEN:'BOARDING', statusZH:'登機', departure:'', lamp:true }
    * An empty/omitted model renders the row blank. Safe to call repeatedly on
-   * the same rowEl: cells are built once, and each flap no-ops on unchanged
-   * values so only changed cells re-flip.
+   * the same rowEl: cells are built once, and no-op on unchanged values so
+   * only changed cells re-flip.
    */
   function renderRow(rowEl, model) {
     var c = rowEl._cells || (rowEl._cells = buildRowCells(rowEl));
     model = model || {};
 
+    // Brand colours drive the fallback chip shown when a carrier's logo is
+    // unavailable (unknown code, CDN miss, or offline).
     var col = AIRLINE_COLORS[String(model.airline || '').toUpperCase()] || AIRLINE_COLORS._default;
     c.airlineEl.style.setProperty('--air-bg', col.bg);
     c.airlineEl.style.setProperty('--air-fg', col.fg);
 
-    c.airline.setValue(model.airline || '');
-    // Native tooltip: full airline name (from data.js's airlines.json lookup).
-    // flap.js's card cell exposes its DOM node as `.el`; set title there so the
-    // small 2-letter airline card reveals the full carrier name on hover. When
-    // the model carries no name (demo data / unresolved carrier), clear it.
-    c.airline.el.title = model.airlineName || '';
+    // Real carrier logo; the 2-letter code doubles as tooltip fallback text and
+    // the chip shown when the logo can't load. Full name (from airlines.json)
+    // is the hover tooltip.
+    c.airline.setValue({ code: model.airline || '', name: model.airlineName || '' });
     setGroup(c.flight, model.flightNo);
     setGroup(c.destEN, model.destEN);
     c.destZH.setValue(model.destZH || '');
     setGroup(c.sched, model.scheduled);
-    setGroup(c.checkin, model.checkin);
-    setGroup(c.status, model.status);
-    setGroup(c.embark, model.embark);
+    setGroup(c.gate, model.gate);
+    // Status is plain backlit text, not flaps — set only when changed.
+    var stEn = model.statusEN || '';
+    var stZh = model.statusZH || '';
+    if (c.statusEn.textContent !== stEn) c.statusEn.textContent = stEn;
+    if (c.statusZh.textContent !== stZh) c.statusZh.textContent = stZh;
+    setGroup(c.departure, model.departure);
 
     if (model.lamp) c.lamp.classList.add('lit');
     else c.lamp.classList.remove('lit');
   }
 
   // ---- STATIC DEMO DATA (replaced by live data in task 4.x) -------------
-  // Raw form mirrors the worker's row shape closely enough to demo the
-  // helpers: scheduled is "HH:MM", status is free text.
+  // Raw form mirrors the worker's row shape closely enough for the demo
+  // helpers: scheduled is "HH:MM"; statusEN/statusZH are a bilingual pair.
   var DEMO_ROWS = [
-    { airline: 'CX', flightNo: 'CX 713', destEN: 'BANGKOK',      destZH: '曼谷',   scheduled: '09:10', checkin: 'T1 C', status: 'Boarding' },
-    { airline: 'KA', flightNo: 'KA 041', destEN: 'TOKYO',        destZH: '東京',   scheduled: '09:15', checkin: 'T1 M', status: '' },
-    { airline: 'SQ', flightNo: 'SQ 865', destEN: 'SINGAPORE',    destZH: '新加坡', scheduled: '09:20', checkin: 'T1 D', status: 'Final Call' },
-    { airline: 'BR', flightNo: 'BR 856', destEN: 'TAIPEI',       destZH: '台北',   scheduled: '09:25', checkin: 'T1 K', status: '' },
-    { airline: 'NW', flightNo: 'NW 002', destEN: 'TOKYO',        destZH: '東京',   scheduled: '09:30', checkin: 'T1 A', status: 'Gate Closed' },
-    { airline: 'UA', flightNo: 'UA 862', destEN: 'SAN FRANCISCO', destZH: '三藩市', scheduled: '09:40', checkin: 'T1 E', status: 'Boarding' },
-    { airline: 'CX', flightNo: 'CX 250', destEN: 'LONDON',       destZH: '倫敦',   scheduled: '09:50', checkin: 'T1 G', status: '' },
-    { airline: 'JL', flightNo: 'JL 736', destEN: 'OSAKA',        destZH: '大阪',   scheduled: '10:00', checkin: 'T1 B', status: '' },
-    { airline: 'TG', flightNo: 'TG 601', destEN: 'BANGKOK',      destZH: '曼谷',   scheduled: '10:10', checkin: 'T1 H', status: 'Delayed' },
-    { airline: 'CZ', flightNo: 'CZ 302', destEN: 'GUANGZHOU',    destZH: '廣州',   scheduled: '10:20', checkin: 'T2 K', status: '' },
-    { airline: 'KA', flightNo: 'KA 862', destEN: 'SHANGHAI',     destZH: '上海',   scheduled: '10:30', checkin: 'T1 M', status: 'Boarding' },
-    { airline: 'CX', flightNo: 'CX 907', destEN: 'MANILA',       destZH: '馬尼拉', scheduled: '10:40', checkin: 'T1 F', status: '' }
+    { airline: 'CX', flightNo: 'CX 713', destEN: 'BANGKOK', destZH: '曼谷', scheduled: '09:10', gate: '23', statusEN: 'BOARDING', statusZH: '登機' },
+    { airline: 'KA', flightNo: 'KA 041', destEN: 'TOKYO', destZH: '東京', scheduled: '09:15', gate: '25', statusEN: '', statusZH: '' },
+    { airline: 'SQ', flightNo: 'SQ 865', destEN: 'SINGAPORE', destZH: '新加坡', scheduled: '09:20', gate: '30', statusEN: 'FINAL CALL', statusZH: '最後召集' },
+    { airline: 'BR', flightNo: 'BR 856', destEN: 'TAIPEI', destZH: '台北', scheduled: '09:25', gate: '41', statusEN: '', statusZH: '' },
+    { airline: 'NW', flightNo: 'NW 002', destEN: 'TOKYO', destZH: '東京', scheduled: '09:30', gate: '48', statusEN: 'GATE CLOSED', statusZH: '閘口關閉' },
+    { airline: 'UA', flightNo: 'UA 862', destEN: 'SAN FRAN', destZH: '三藩市', scheduled: '09:40', gate: '60', statusEN: 'BOARDING', statusZH: '登機' },
+    { airline: 'CX', flightNo: 'CX 250', destEN: 'LONDON', destZH: '倫敦', scheduled: '09:50', gate: '1', statusEN: '', statusZH: '' },
+    { airline: 'JL', flightNo: 'JL 736', destEN: 'OSAKA', destZH: '大阪', scheduled: '10:00', gate: '15', statusEN: '', statusZH: '' },
+    { airline: 'TG', flightNo: 'TG 601', destEN: 'BANGKOK', destZH: '曼谷', scheduled: '10:10', gate: '35', statusEN: 'DELAYED', statusZH: '延遲' },
+    { airline: 'CZ', flightNo: 'CZ 302', destEN: 'GUANGZHOU', destZH: '廣州', scheduled: '10:20', gate: '210', statusEN: '', statusZH: '' },
+    { airline: 'KA', flightNo: 'KA 862', destEN: 'SHANGHAI', destZH: '上海', scheduled: '10:30', gate: '216', statusEN: 'BOARDING', statusZH: '登機' },
+    { airline: 'CX', flightNo: 'CX 907', destEN: 'MANILA', destZH: '馬尼拉', scheduled: '10:40', gate: '520', statusEN: '', statusZH: '' }
   ];
 
   // Raw demo row -> display view-model, exercising the shared helpers.
@@ -194,10 +195,11 @@
       destEN: r.destEN,
       destZH: r.destZH,
       scheduled: formatTime(r.scheduled),
-      checkin: r.checkin,
-      status: (r.status || '').toUpperCase(),
-      embark: computeEmbark(r.scheduled),
-      lamp: isLampLit(r.status)
+      gate: r.gate,
+      statusEN: r.statusEN,
+      statusZH: r.statusZH,
+      departure: '',
+      lamp: isLampLit(r.statusEN)
     };
   }
 
@@ -213,9 +215,9 @@
       rowEls.push(el);
     }
     // Start every row blank; the live data layer (data.js) populates them on
-    // its first poll, which gives the authentic "flap in from blank" look.
-    // (DEMO_ROWS/toDisplayModel below remain available for standalone
-    // testing of this file without data.js loaded.)
+    // its first poll, giving the authentic "flap in from blank" look.
+    // (DEMO_ROWS/toDisplayModel above remain available for standalone testing
+    // of this file without data.js loaded.)
     for (var j = 0; j < ROW_COUNT; j++) {
       renderRow(rowEls[j], {});
     }
@@ -224,7 +226,7 @@
 
   // Scale the whole frame uniformly so it fills the viewport without scrolling.
   // transform:scale doesn't change offsetWidth/Height, so the natural (scale-1)
-  // size is always read directly.
+  // size can always be read directly.
   function fitBoard() {
     var frame = document.getElementById('frame');
     if (!frame) return;
@@ -255,7 +257,6 @@
   global.KaiTak = {
     renderRow: renderRow,
     formatTime: formatTime,
-    computeEmbark: computeEmbark,
     isLampLit: isLampLit,
     buildBoard: buildBoard,
     fitBoard: fitBoard,

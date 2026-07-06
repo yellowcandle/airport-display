@@ -47,28 +47,30 @@
   // ---- Status vocabulary mapping (departures-data spec / design D7) -------
   // Raw HKIA vocabulary (lang=en): empty, "Est HH:MM", "Boarding", "Boarding
   // Soon", "Final Call", "Gate Closed", "Dep HH:MM", "Cancelled".
+  // Returns a bilingual status label plus an optional red-column time string:
+  // { en, zh, time } where `time` is a "H.MM" revised/actual departure time (for
+  // the red departure drums) or '' when the status carries no time.
   function mapStatus(raw) {
     var s = raw == null ? '' : String(raw).trim();
-    if (s === '') return '';
+    if (s === '') return { en: '', zh: '', time: '' };
     var lower = s.toLowerCase();
+    var m = s.match(/(\d{1,2}:\d{2})/);
+    var time = m ? KaiTak.formatTime(m[1]) : '';
 
-    if (lower.indexOf('cancel') === 0) return 'CANCELLED';
-
-    if (lower.indexOf('est') === 0) {
-      var m = s.match(/(\d{1,2}:\d{2})/);
-      return 'EST ' + (m ? KaiTak.formatTime(m[1]) : '');
-    }
-
-    if (lower.indexOf('final call') === 0) return 'FINAL CALL';
-    if (lower.indexOf('gate closed') === 0) return 'GATE CLOSED';
-    if (lower.indexOf('dep') === 0) return 'DEPARTED';
+    if (lower.indexOf('cancel') === 0) return { en: 'CANCELLED', zh: '取消', time: '' };
+    if (lower.indexOf('est') === 0) return { en: 'DELAYED', zh: '延遲', time: time };
+    if (lower.indexOf('final call') === 0) return { en: 'FINAL CALL', zh: '最後召集', time: '' };
+    if (lower.indexOf('gate closed') === 0) return { en: 'GATE CLOSED', zh: '閘口關閉', time: '' };
+    if (lower.indexOf('dep') === 0) return { en: 'DEPARTED', zh: '已起飛', time: time };
 
     if (lower.indexOf('boarding') === 0) {
-      return lower.indexOf('soon') >= 0 ? 'PREPARING' : 'BOARDING';
+      return lower.indexOf('soon') >= 0
+        ? { en: 'PREPARING', zh: '準備登機', time: '' }
+        : { en: 'BOARDING', zh: '登機', time: '' };
     }
 
     // Unrecognized status text: surface it uppercased rather than dropping it.
-    return s.toUpperCase();
+    return { en: s.toUpperCase(), zh: '', time: '' };
   }
 
   // ---- Destination lookup ---------------------------------------------------
@@ -128,8 +130,7 @@
     var chosen = flights[flightIndex] || flights[0] || {};
     var dest = lookupDest(raw.destIata);
     var air = lookupAirline(chosen.airline);
-    var terminal = raw.terminal == null ? '' : String(raw.terminal);
-    var aisle = raw.aisle == null ? '' : String(raw.aisle);
+    var status = item.mappedStatus;
 
     return {
       // Display the resolved short IATA code (e.g. ICAO "CPA" -> "CX"); the raw
@@ -141,14 +142,13 @@
       destEN: dest.en,
       destZH: dest.zh,
       scheduled: KaiTak.formatTime(raw.scheduled),
-      checkin: (terminal + ' ' + aisle).trim(),
-      status: item.mappedStatus,
-      // NOTE: KaiTak.computeEmbark() already returns "H.MM"-formatted output
-      // (it does its own minute math + dot formatting), so it is NOT passed
-      // through formatTime() again here — formatTime() expects colon-
-      // separated "HH:MM" input and would blank out a dot-formatted string.
-      embark: KaiTak.computeEmbark(raw.scheduled),
-      lamp: KaiTak.isLampLit(item.mappedStatus),
+      // HKIA departure gate (e.g. "216"); blank until assigned.
+      gate: raw.gate == null ? '' : String(raw.gate),
+      statusEN: status.en,
+      statusZH: status.zh,
+      // Revised/actual departure time for the red drums; '' when none.
+      departure: status.time,
+      lamp: KaiTak.isLampLit(status.en),
     };
   }
 
@@ -162,15 +162,19 @@
     items.forEach(function (item) {
       presentKeys[item.key] = true;
 
-      if (item.mappedStatus === 'CANCELLED') return;
+      if (item.mappedStatus.en === 'CANCELLED') return;
 
-      if (item.mappedStatus === 'DEPARTED') {
+      if (item.mappedStatus.en === 'DEPARTED') {
         var firstSeen = departedFirstSeen.get(item.key);
         if (firstSeen == null) {
-          firstSeen = now;
-          departedFirstSeen.set(item.key, firstSeen);
+          // Grace period only for flights we were showing when they departed;
+          // flights already departed the first time we see them (e.g. this
+          // morning's 00:05 flights on page load) drop out immediately.
+          if (previousKeys.indexOf(item.key) === -1) return;
+          departedFirstSeen.set(item.key, now);
+        } else if (now - firstSeen > DEPARTED_TTL_MS) {
+          return; // expired off the board
         }
-        if (now - firstSeen > DEPARTED_TTL_MS) return; // expired off the board
       }
 
       candidates.push(item);
@@ -337,6 +341,12 @@
     Promise.all([loadDestinations(), loadAirlines()]).then(function () {
       poll().then(scheduleNextPoll, scheduleNextPoll);
       setInterval(rotationTick, ROTATION_INTERVAL_MS);
+    });
+
+    // A board left in a background tab gets throttled timers; poll as soon as
+    // it's visible again rather than waiting out the remainder of the cycle.
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) poll();
     });
   }
 

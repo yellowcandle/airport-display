@@ -26,10 +26,10 @@
   // Slot counts must match the column widths in arrivals-board.css
   // (:root --col-arr-*) and board.css (--col-*).
   var FLIGHT_SLOTS = 7;
-  var ORIGIN_EN_SLOTS = 13;
+  var ORIGIN_EN_SLOTS = 10;
   var SCHED_SLOTS = 5;
   var BAGGAGE_SLOTS = 3; // reclaim belt e.g. "14"; 3 slots leaves room for "B3"
-  var STATUS_SLOTS = 13; // fits "AT GATE 11.53"
+  var ARRTIME_SLOTS = 5; // actual/estimated arrival time, red drums
   var ROW_COUNT = 12;
 
   // Drum cell geometry (CELL.w must equal --cw in board.css).
@@ -93,7 +93,7 @@
     }
   }
 
-  // Build 8 grid cells + flap cells once; cached on the row element.
+  // Build 9 grid cells + flap cells once; cached on the row element.
   function buildRowCells(rowEl) {
     function child(cls) {
       var d = document.createElement('div');
@@ -108,7 +108,17 @@
     var schedEl = child('sched');
     var baggageEl = child('baggage');
     var statusEl = child('status');
+    var arrtimeEl = child('arrtime');
     var lampEl = child('lamp');
+
+    // Status is small backlit bilingual text (not flap cells), per the photo:
+    // two spans (English over Chinese) built once and updated as plain text.
+    var statusEn = document.createElement('span');
+    statusEn.className = 'st-en';
+    var statusZh = document.createElement('span');
+    statusZh.className = 'st-zh';
+    statusEl.appendChild(statusEn);
+    statusEl.appendChild(statusZh);
 
     var lamp = document.createElement('span');
     lamp.className = 'lamp';
@@ -116,8 +126,8 @@
 
     return {
       airlineEl: airlineEl,
-      airline: global.createFlapCell(airlineEl, {
-        mode: 'card', width: '50px', height: '26px', fontSize: '16px', className: 'airline-card'
+      airline: global.createLogoCell(airlineEl, {
+        width: '50px', height: '26px', className: 'airline-card'
       }),
       flight: makeDrumGroup(flightEl, FLIGHT_SLOTS),
       originEN: makeDrumGroup(originENEl, ORIGIN_EN_SLOTS),
@@ -126,7 +136,9 @@
       }),
       sched: makeDrumGroup(schedEl, SCHED_SLOTS),
       baggage: makeDrumGroup(baggageEl, BAGGAGE_SLOTS),
-      status: makeDrumGroup(statusEl, STATUS_SLOTS),
+      statusEn: statusEn,
+      statusZh: statusZh,
+      arrtime: makeDrumGroup(arrtimeEl, ARRTIME_SLOTS),
       lamp: lamp
     };
   }
@@ -136,8 +148,8 @@
    *
    * `model` is the display view-model (all fields already formatted):
    *   { airline:'CX', airlineName:'Cathay Pacific', flightNo:'CX 713',
-   *     originEN:'BANGKOK', originZH:'曼谷', scheduled:'9.10',
-   *     baggage:'14', status:'AT GATE 11.53', lamp:true }
+   *     originEN:'BANGKOK', originZH:'曼谷', scheduled:'9.10', baggage:'14',
+   *     statusEN:'AT GATE', statusZH:'已到閘', arrtime:'11.53', lamp:true }
    * An empty/omitted model renders the row blank. Safe to call repeatedly on
    * the same rowEl: cells are built once, and no-op on unchanged values so
    * only changed cells re-flip.
@@ -146,20 +158,26 @@
     var c = rowEl._cells || (rowEl._cells = buildRowCells(rowEl));
     model = model || {};
 
+    // Brand colours drive the fallback chip shown when a carrier's logo is
+    // unavailable (unknown code, CDN miss, or offline).
     var col = AIRLINE_COLORS[String(model.airline || '').toUpperCase()] || AIRLINE_COLORS._default;
     c.airlineEl.style.setProperty('--air-bg', col.bg);
     c.airlineEl.style.setProperty('--air-fg', col.fg);
 
-    c.airline.setValue(model.airline || '');
-    // Native tooltip: full airline name (from arrivals-data.js's airlines.json
-    // lookup). flap.js's card cell exposes its DOM node as `.el`.
-    c.airline.el.title = model.airlineName || '';
+    // Real carrier logo; 2-letter code doubles as the chip fallback, full name
+    // (from airlines.json) is the hover tooltip.
+    c.airline.setValue({ code: model.airline || '', name: model.airlineName || '' });
     setGroup(c.flight, model.flightNo);
     setGroup(c.originEN, model.originEN);
     c.originZH.setValue(model.originZH || '');
     setGroup(c.sched, model.scheduled);
     setGroup(c.baggage, model.baggage);
-    setGroup(c.status, model.status);
+    // Status is plain backlit text, not flaps — set only when changed.
+    var stEn = model.statusEN || '';
+    var stZh = model.statusZH || '';
+    if (c.statusEn.textContent !== stEn) c.statusEn.textContent = stEn;
+    if (c.statusZh.textContent !== stZh) c.statusZh.textContent = stZh;
+    setGroup(c.arrtime, model.arrtime);
 
     if (model.lamp) c.lamp.classList.add('lit');
     else c.lamp.classList.remove('lit');

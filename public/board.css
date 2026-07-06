@@ -4,6 +4,18 @@
  * No build step; pairs with flap.js (cell engine) and board.js (rendering).
  */
 
+/* Free HK Kai (自由香港楷書, freehkfonts.opensource.hk) — subset to the
+ * board's characters by scripts/subset-kai-font.sh. The weight range spans
+ * everything so the browser never synthesizes a faux bold over the brush
+ * strokes; rare place-name glyphs missing from the font (峇峴汶) fall back
+ * to the system kaiti faces listed after it. */
+@font-face {
+  font-family: 'Free HK Kai';
+  src: url('fonts/FreeHKKai-subset.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 :root {
   /* Palette */
   --frame-yellow: #D9A62B;
@@ -13,6 +25,7 @@
   --label-muted: #8A8577;
   --lamp-red: #E8261C;
   --lamp-dim: #4A1210;
+  --status-red: #FF5040; /* status column flips, per the reference photos */
 
   /* Cell geometry — drum cells are fixed-width so groups align into columns. */
   --cw: 20px;   /* drum cell width  (must match CELL.w in board.js) */
@@ -22,12 +35,12 @@
   /* Column widths = (slot count × cell width), matching the slot counts in board.js */
   --col-airline: 52px;
   --col-flight:  calc(7 * var(--cw));   /* 140 */
-  --col-destEN:  calc(13 * var(--cw));  /* 260 */
+  --col-destEN:  calc(10 * var(--cw));  /* 200 */
   --col-destZH:  82px;
   --col-sched:   calc(5 * var(--cw));   /* 100 */
-  --col-checkin: calc(5 * var(--cw));   /* 100 */
-  --col-status:  calc(12 * var(--cw));  /* 240 */
-  --col-embark:  calc(5 * var(--cw));   /* 100 */
+  --col-gate:    calc(3 * var(--cw));   /* 60 */
+  --col-status:  150px;
+  --col-departure: calc(5 * var(--cw)); /* 100 */
   --col-lamp:    26px;
 }
 
@@ -84,7 +97,7 @@ html, body {
   text-transform: uppercase;
 }
 .title-zh {
-  font-family: 'Noto Sans HK', sans-serif;
+  font-family: 'Free HK Kai', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', serif;
   font-weight: 700;
   font-size: 30px;
   letter-spacing: 0.12em;
@@ -97,7 +110,7 @@ html, body {
   display: grid;
   grid-template-columns:
     var(--col-airline) var(--col-flight) var(--col-destEN) var(--col-destZH)
-    var(--col-sched) var(--col-checkin) var(--col-status) var(--col-embark)
+    var(--col-sched) var(--col-gate) var(--col-status) var(--col-departure)
     var(--col-lamp);
   column-gap: var(--col-gap);
   align-items: center;
@@ -123,7 +136,7 @@ html, body {
      so no uppercase transform here. */
 }
 .klabel .zh {
-  font-family: 'Noto Sans HK', sans-serif;
+  font-family: 'Free HK Kai', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', serif;
   font-weight: 600;
   font-size: 11px;
 }
@@ -148,18 +161,58 @@ html, body {
 }
 .kaitak .flap-face { background: var(--flap-face); }
 
-/* Airline card: brand-coloured background, colour set per row via CSS vars. */
-.kaitak .airline .flap-cell,
-.kaitak .airline .flap-face {
-  background: var(--air-bg, var(--flap-face));
+/* Airline logo card: the carrier's real logo (flap.js's createLogoCell fetches
+ * it from the Aviasales logo CDN by IATA code) sits on a light "sticker". When
+ * the logo can't load, a brand-coloured 2-letter chip shows through instead —
+ * colours are set per row via --air-bg / --air-fg. */
+.kaitak .airline .logo-card {
+  position: relative;
+  width: var(--fw, 50px);
+  height: var(--fh, 26px);
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--flap-text); /* cream sticker behind the logo */
 }
-.kaitak .airline .flap-cell { color: var(--air-fg, var(--flap-text)); }
+.kaitak .airline .logo-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 2px;
+  box-sizing: border-box;
+}
+/* Fallback chip: fills the card with the brand colour + 2-letter code. Hidden
+ * until the logo fails to load (.no-logo), which also hides the image. */
+.kaitak .airline .logo-code {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 700;
+  font-size: 16px;
+  background: var(--air-bg, var(--flap-face));
+  color: var(--air-fg, var(--flap-text));
+}
+.kaitak .airline .logo-card.no-logo .logo-img { display: none; }
+.kaitak .airline .logo-card.no-logo .logo-code { display: flex; }
 
-/* Chinese destination card uses the Hong Kong sans face. */
+/* Chinese destination card uses the kaiti (楷體) brush face. */
 .kaitak .destzh .flap-cell {
-  font-family: 'Noto Sans HK', sans-serif;
+  font-family: 'Free HK Kai', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', serif;
   font-weight: 700;
 }
+
+/* Revised/actual time drums flip in warm signal red — on the real board the
+ * departure / arrival time column reads in red characters. */
+.kaitak .departure .flap-cell,
+.kaitak .arrtime .flap-cell { color: var(--status-red); }
+
+/* Status: small backlit bilingual text (not flaps), per the reference photo. */
+.kcell.status { display: flex; flex-direction: column; justify-content: center; line-height: 1.15; font-size: 0; }
+.kcell.status .st-en { font-family: 'Oswald', 'Helvetica Neue', Arial, sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 0.06em; color: #E9E4D4; }
+.kcell.status .st-zh { font-family: 'Free HK Kai', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', serif; font-weight: 600; font-size: 12px; color: #E9E4D4; }
 
 /* ---- Boarding lamp ----------------------------------------------------- */
 .lamp {
@@ -211,3 +264,7 @@ html, body {
 }
 .page-nav:hover,
 .page-nav:focus { opacity: 1; color: var(--frame-yellow); }
+
+/* Second nav link, tucked into the opposite (top-left) corner so it never
+ * collides with the departures/arrivals link. Used for the "about" page. */
+.page-nav.left { right: auto; left: 16px; }

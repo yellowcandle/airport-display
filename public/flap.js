@@ -167,7 +167,62 @@
     return { setValue: setValue, destroy: destroy, el: el };
   }
 
+  // A non-flap "logo card" for the airline column. Shows the carrier's real
+  // logo (Aviasales logo CDN, keyed by IATA code) on a light sticker, and
+  // falls back to a brand-coloured 2-letter chip only when the logo actually
+  // fails — unresolved carriers reach the CDN as their 3-letter ICAO code,
+  // which 404s and triggers onerror -> chip. The <img> is shown by default (no
+  // lazy loading: a display:none lazy image never intersects the viewport, so
+  // it would never load). Same container/return shape as createFlapCell.
+  function createLogoCell(container, opts) {
+    opts = opts || {};
+    var el = document.createElement('div');
+    el.className = 'logo-card' + (opts.className ? ' ' + opts.className : '');
+    if (opts.width) el.style.setProperty('--fw', opts.width);
+    if (opts.height) el.style.setProperty('--fh', opts.height);
+
+    var chip = document.createElement('span');
+    chip.className = 'logo-code';
+    var img = document.createElement('img');
+    img.className = 'logo-img';
+    img.alt = '';
+    el.appendChild(chip);
+    el.appendChild(img);
+    container.appendChild(el);
+
+    var currentCode = null;
+    // Only errors flip to the chip; a successful (re)load clears any prior
+    // error state. The image shows by default, so success needs no handler.
+    img.addEventListener('error', function () { el.classList.add('no-logo'); });
+    img.addEventListener('load', function () { el.classList.remove('no-logo'); });
+
+    // setValue({ code, name }) — only swaps the image when the code actually
+    // changes, so codeshare-rotation re-renders don't re-request the same logo.
+    function setValue(v) {
+      v = v || {};
+      var code = v.code == null ? '' : String(v.code);
+      if (code === currentCode) return;
+      currentCode = code;
+      chip.textContent = code;
+      el.title = v.name || '';
+      if (code) {
+        el.classList.remove('no-logo'); // optimistically show the logo
+        img.src = 'https://pics.avs.io/100/50/' + encodeURIComponent(code) + '.png';
+      } else {
+        el.classList.add('no-logo'); // blank row: no logo, empty chip
+        img.removeAttribute('src');
+      }
+    }
+
+    function destroy() {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }
+
+    return { setValue: setValue, destroy: destroy, el: el };
+  }
+
   createFlapCell.DRUM = DRUM;
   global.createFlapCell = createFlapCell;
+  global.createLogoCell = createLogoCell;
   if (typeof module !== 'undefined' && module.exports) module.exports = createFlapCell;
 })(typeof window !== 'undefined' ? window : this);
