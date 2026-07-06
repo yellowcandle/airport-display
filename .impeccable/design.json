@@ -4,7 +4,7 @@
   "title": "Design System: Kai Tak Departure Board",
   "extensions": {
     "colorMeta": {
-      "frame-marigold": { "role": "primary", "displayName": "Frame Marigold", "canonical": "#D9A62B", "tonalRamp": ["#241a06", "#4a370f", "#715318", "#9a7220", "#c2902a", "#d9a62b", "#e6bd5c", "#f0d492", "#f8e9c6"] },
+      "frame-marigold": { "role": "primary", "displayName": "Frame Marigold", "canonical": "#E8B534", "tonalRamp": ["#241a06", "#4a370f", "#715318", "#9a7220", "#c2902a", "#d9a62b", "#e6bd5c", "#f0d492", "#f8e9c6"] },
       "signal-red": { "role": "secondary", "displayName": "Signal Red", "canonical": "#E8261C", "tonalRamp": ["#2c0705", "#560d09", "#82130d", "#ad1912", "#d81f16", "#e8261c", "#f0574e", "#f68a83", "#fbc0bc"] },
       "revised-red": { "role": "secondary", "displayName": "Revised Red", "canonical": "#FF5040", "tonalRamp": ["#330f0a", "#5e1c14", "#8a281d", "#b53527", "#e04231", "#ff5040", "#ff7a6d", "#ffa89f", "#ffd3ce"] },
       "board-black": { "role": "neutral", "displayName": "Board Black", "canonical": "#0D0D0D", "tonalRamp": ["#050505", "#0d0d0d", "#1a1a1a", "#2a2a2a", "#3d3d3d", "#5c5c5c", "#8a8a8a", "#bfbfbf", "#f5f5f5"] },
@@ -77,7 +77,7 @@
       "refersTo": "hud-pill",
       "description": "Corner navigation / sound control; the only chrome outside the board.",
       "html": "<a class=\"ds-hud\" href=\"#\">○ about 關於</a>",
-      "css": ".ds-hud { display:inline-block; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13px; letter-spacing:0.08em; color:#F3E4BE; text-decoration:none; padding:6px 12px; border:1px solid rgba(217,166,43,0.6); border-radius:999px; background:rgba(217,166,43,0.12); cursor:pointer; transition:background 160ms ease,color 160ms ease,border-color 160ms ease; } .ds-hud:hover, .ds-hud:focus-visible { color:#0D0D0D; background:#D9A62B; border-color:#D9A62B; outline:none; }"
+      "css": ".ds-hud { display:inline-block; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13px; letter-spacing:0.08em; color:#F3E4BE; text-decoration:none; padding:6px 12px; border:1px solid rgba(217,166,43,0.6); border-radius:999px; background:rgba(217,166,43,0.12); cursor:pointer; transition:background 160ms ease,color 160ms ease,border-color 160ms ease; } .ds-hud:hover, .ds-hud:focus-visible { color:#0D0D0D; background:#E8B534; border-color:#E8B534; outline:none; }"
     }
   ],
   "narrative": {
@@ -92,7 +92,7 @@
     ],
     "rules": [
       { "name": "The Red-Means-Now Rule", "body": "Red is forbidden as decoration. It appears in exactly two places: a lit boarding lamp (#E8261C) and a revised time (#FF5040). If red is on the board, something is happening to that flight right now.", "section": "colors" },
-      { "name": "The One-Frame Rule", "body": "Marigold (#D9A62B) is the frame and the HUD accent — nothing else. Never a fill behind data, never a text color on the board field.", "section": "colors" },
+      { "name": "The One-Frame Rule", "body": "Marigold (#E8B534) is the frame and the HUD accent — nothing else. Never a fill behind data, never a text color on the board field.", "section": "colors" },
       { "name": "The Monospace-Is-Structural Rule", "body": "The drum column type must stay monospace; the alignment of the board depends on every glyph having the same advance.", "section": "typography" },
       { "name": "The Bilingual-Parity Rule", "body": "English and Traditional Chinese share the row and the visual weight. Chinese is always kaiti (TW-Kai), never a Noto/Hei sans.", "section": "typography" },
       { "name": "The One-Shadow Rule", "body": "The frame is the only element that casts. No flap, card, button, or label gets a drop shadow; depth on the board is the flap fold or an emitted glow.", "section": "elevation" }

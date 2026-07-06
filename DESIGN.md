@@ -2,7 +2,7 @@
 name: Kai Tak Departure Board
 description: A live, split-flap recreation of Hong Kong's old Kai Tak airport board.
 colors:
-  frame-marigold: "#D9A62B"
+  frame-marigold: "#E8B534"
   board-black: "#0D0D0D"
   flap-face: "#1A1A1A"
   flap-cream: "#F5F3EC"
@@ -68,7 +68,7 @@ components:
     width: "50px"
     height: "26px"
   hud-pill:
-    backgroundColor: "#D9A62B1F"
+    backgroundColor: "#E8B5341F"
     textColor: "{colors.hud-cream}"
     typography: "{typography.status}"
     rounded: "{rounded.pill}"
@@ -122,7 +122,7 @@ A near-monochrome mechanical surface — black board, cream characters — lit b
 single marigold frame, with red held in reserve for live events.
 
 ### Primary
-- **Frame Marigold** (`#D9A62B`): The board's signature. The full outer frame,
+- **Frame Marigold** (`#E8B534`): The board's signature. The full outer frame,
   the bilingual masthead sits *in* black on top of it, and it is the accent for
   every interactive HUD control (links, sound toggle) and their hover fill. This
   is the one saturated color on screen; its scarcity elsewhere is what lets it
@@ -160,7 +160,7 @@ exactly two places: a lit boarding lamp (`#E8261C`) and a revised time
 (`#FF5040`). If red is on the board, something is happening to that flight right
 now. Never tint a heading, border, or label red.
 
-**The One-Frame Rule.** Marigold (`#D9A62B`) is the frame and the HUD accent —
+**The One-Frame Rule.** Marigold (`#E8B534`) is the frame and the HUD accent —
 nothing else. It is never a fill behind data, never a text color on the board
 field. Its job is to be the object's edge.
 
@@ -255,8 +255,8 @@ expressed through the flap fold or an emitted glow, never a shadow.
 - **Character:** the only chrome that isn't "the board" — small marigold-outlined
   pills fixed to the corners of the wall.
 - **Shape:** fully rounded (`999px`), 6×12px padding, IBM Plex Mono 13px,
-  `#F3E4BE` text, 1px `#D9A62B` (60% alpha) border on a faint marigold wash.
-- **States:** hover/focus fills solid marigold (`#D9A62B`) with black text.
+  `#F3E4BE` text, 1px `#E8B534` (60% alpha) border on a faint marigold wash.
+- **States:** hover/focus fills solid marigold (`#E8B534`) with black text.
   Positions: about (top-left), board-switch (top-right), sound toggle
   (bottom-left).
 
