@@ -221,6 +221,17 @@ html, body {
   font-family: 'TW-Kai', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', serif;
   font-weight: 700;
 }
+/* Justify the city name across the column (分散對齊), like the reference
+ * board: a 2-char name reads 上 … 海 spread to the edges, not centred.
+ * text-align-last drives the single line; white-space:normal lets it take
+ * effect (names always fit the column, so they never actually wrap). */
+.kaitak .destzh .flap-ch {
+  box-sizing: border-box;
+  padding: 0 6px;
+  white-space: normal;
+  text-align: justify;
+  text-align-last: justify;
+}
 
 /* Revised/actual time drums flip in warm signal red — on the real board the
  * departure / arrival time column reads in red characters. */
