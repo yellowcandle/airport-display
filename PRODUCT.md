@@ -23,7 +23,7 @@ task to complete — the experience is *watching the board flip*.
 
 Vintage · mechanical · bilingual · understated. The Solari/Kai Tak departures
 hall: marigold frame, black split-flap rows, IBM Plex Mono drums, kaiti Chinese
-(self-hosted Free HK Kai 自由香港楷書), boarding-lamp red, `H.MM` dot times.
+(self-hosted TW-Kai 自由香港楷書), boarding-lamp red, `H.MM` dot times.
 
 ## Anti-references
 

@@ -69,7 +69,7 @@
       "refersTo": "status-label",
       "description": "Two-line backlit bilingual status; plain text, does not flip.",
       "html": "<span class=\"ds-status\"><span class=\"ds-status-en\">BOARDING</span><span class=\"ds-status-zh\">登機</span></span>",
-      "css": ".ds-status { display:inline-flex; flex-direction:column; align-items:center; line-height:1.15; } .ds-status-en { font-family:Oswald,'Helvetica Neue',Arial,sans-serif; font-weight:600; font-size:13px; letter-spacing:0.06em; color:#E9E4D4; } .ds-status-zh { font-family:'Free HK Kai','Kaiti TC','STKaiti',serif; font-weight:600; font-size:12px; color:#E9E4D4; }"
+      "css": ".ds-status { display:inline-flex; flex-direction:column; align-items:center; line-height:1.15; } .ds-status-en { font-family:Oswald,'Helvetica Neue',Arial,sans-serif; font-weight:600; font-size:13px; letter-spacing:0.06em; color:#E9E4D4; } .ds-status-zh { font-family:'TW-Kai','Kaiti TC','STKaiti',serif; font-weight:600; font-size:12px; color:#E9E4D4; }"
     },
     {
       "name": "HUD Pill",
@@ -94,12 +94,12 @@
       { "name": "The Red-Means-Now Rule", "body": "Red is forbidden as decoration. It appears in exactly two places: a lit boarding lamp (#E8261C) and a revised time (#FF5040). If red is on the board, something is happening to that flight right now.", "section": "colors" },
       { "name": "The One-Frame Rule", "body": "Marigold (#D9A62B) is the frame and the HUD accent — nothing else. Never a fill behind data, never a text color on the board field.", "section": "colors" },
       { "name": "The Monospace-Is-Structural Rule", "body": "The drum column type must stay monospace; the alignment of the board depends on every glyph having the same advance.", "section": "typography" },
-      { "name": "The Bilingual-Parity Rule", "body": "English and Traditional Chinese share the row and the visual weight. Chinese is always kaiti (Free HK Kai), never a Noto/Hei sans.", "section": "typography" },
+      { "name": "The Bilingual-Parity Rule", "body": "English and Traditional Chinese share the row and the visual weight. Chinese is always kaiti (TW-Kai), never a Noto/Hei sans.", "section": "typography" },
       { "name": "The One-Shadow Rule", "body": "The frame is the only element that casts. No flap, card, button, or label gets a drop shadow; depth on the board is the flap fold or an emitted glow.", "section": "elevation" }
     ],
     "dos": [
       "Do keep the drum column in IBM Plex Mono — grid alignment depends on a fixed advance width.",
-      "Do set all Chinese in Free HK Kai kaiti; re-run scripts/subset-kai-font.sh after adding new glyphs.",
+      "Do set all Chinese in TW-Kai kaiti; re-run scripts/subset-kai-font.sh after adding new glyphs.",
       "Do spend red only on live events — a lit lamp (#E8261C) or a revised time (#FF5040).",
       "Do give English and Traditional Chinese equal weight on every row and label.",
       "Do honour prefers-reduced-motion — snap cells to value and silence the clack.",

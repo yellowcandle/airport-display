@@ -52,25 +52,29 @@
   // the red departure drums) or '' when the status carries no time.
   function mapStatus(raw) {
     var s = raw == null ? '' : String(raw).trim();
-    if (s === '') return { en: '', zh: '', time: '' };
+    if (s === '') return { en: '', zh: '', time: '', rawTime: '' };
     var lower = s.toLowerCase();
     var m = s.match(/(\d{1,2}:\d{2})/);
+    var rawTime = m ? m[1] : '';
     var time = m ? KaiTak.formatTime(m[1]) : '';
 
-    if (lower.indexOf('cancel') === 0) return { en: 'CANCELLED', zh: '取消', time: '' };
-    if (lower.indexOf('est') === 0) return { en: 'DELAYED', zh: '延遲', time: time };
-    if (lower.indexOf('final call') === 0) return { en: 'FINAL CALL', zh: '最後召集', time: '' };
-    if (lower.indexOf('gate closed') === 0) return { en: 'GATE CLOSED', zh: '閘口關閉', time: '' };
-    if (lower.indexOf('dep') === 0) return { en: 'DEPARTED', zh: '已起飛', time: time };
+    if (lower.indexOf('cancel') === 0) return { en: 'CANCELLED', zh: '取消', time: '', rawTime: '' };
+    // DELAYED/DEPARTED carry a revised/actual time that supersedes the
+    // original schedule for sort purposes (a 3-hour-delayed 11:35 flight
+    // shouldn't keep squatting at the top of the board).
+    if (lower.indexOf('est') === 0) return { en: 'DELAYED', zh: '延遲', time: time, rawTime: rawTime };
+    if (lower.indexOf('final call') === 0) return { en: 'FINAL CALL', zh: '最後召集', time: '', rawTime: '' };
+    if (lower.indexOf('gate closed') === 0) return { en: 'GATE CLOSED', zh: '閘口關閉', time: '', rawTime: '' };
+    if (lower.indexOf('dep') === 0) return { en: 'DEPARTED', zh: '已起飛', time: time, rawTime: rawTime };
 
     if (lower.indexOf('boarding') === 0) {
       return lower.indexOf('soon') >= 0
-        ? { en: 'PREPARING', zh: '準備登機', time: '' }
-        : { en: 'BOARDING', zh: '登機', time: '' };
+        ? { en: 'PREPARING', zh: '準備登機', time: '', rawTime: '' }
+        : { en: 'BOARDING', zh: '登機', time: '', rawTime: '' };
     }
 
     // Unrecognized status text: surface it uppercased rather than dropping it.
-    return { en: s.toUpperCase(), zh: '', time: '' };
+    return { en: s.toUpperCase(), zh: '', time: '', rawTime: '' };
   }
 
   // ---- Destination lookup ---------------------------------------------------
@@ -189,8 +193,13 @@
       if (!presentKeys[key]) rotationIndex.delete(key);
     });
 
+    function effectiveMinutes(item) {
+      var revised = item.mappedStatus.rawTime;
+      return toMinutes(revised || item.raw.scheduled);
+    }
+
     candidates.sort(function (a, b) {
-      return toMinutes(a.raw.scheduled) - toMinutes(b.raw.scheduled);
+      return effectiveMinutes(a) - effectiveMinutes(b);
     });
 
     return candidates.slice(0, ROW_COUNT);

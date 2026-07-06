@@ -4,14 +4,16 @@
  * No build step; pairs with flap.js (cell engine) and board.js (rendering).
  */
 
-/* Free HK Kai (自由香港楷書, freehkfonts.opensource.hk) — subset to the
- * board's characters by scripts/subset-kai-font.sh. The weight range spans
- * everything so the browser never synthesizes a faux bold over the brush
- * strokes; rare place-name glyphs missing from the font (峇峴汶) fall back
- * to the system kaiti faces listed after it. */
+/* TW-Kai (教育部全字庫正楷體, data.gov.tw dataset 5961) — subset to the
+ * board's characters by scripts/subset-kai-font.sh. Covers the full BMP
+ * (~39,200 CJK chars) so no place-name glyph needs a system-font fallback;
+ * the fallback faces after it are only a safety net for chars added to
+ * destinations.json before the subset is re-run. The weight range spans
+ * everything so the browser never synthesizes a faux bold over the single
+ * brush-stroke weight this font actually has. */
 @font-face {
-  font-family: 'Free HK Kai';
-  src: url('fonts/FreeHKKai-subset.woff2') format('woff2');
+  font-family: 'TW-Kai';
+  src: url('fonts/TWKai-subset.woff2') format('woff2');
   font-weight: 100 900;
   font-display: swap;
 }
@@ -97,7 +99,7 @@ html, body {
   text-transform: uppercase;
 }
 .title-zh {
-  font-family: 'Free HK Kai', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', serif;
+  font-family: 'TW-Kai', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', serif;
   font-weight: 700;
   font-size: 30px;
   letter-spacing: 0.12em;
@@ -136,7 +138,7 @@ html, body {
      so no uppercase transform here. */
 }
 .klabel .zh {
-  font-family: 'Free HK Kai', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', serif;
+  font-family: 'TW-Kai', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', serif;
   font-weight: 600;
   font-size: 11px;
 }
@@ -216,7 +218,7 @@ html, body {
 
 /* Chinese destination card uses the kaiti (楷體) brush face. */
 .kaitak .destzh .flap-cell {
-  font-family: 'Free HK Kai', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', serif;
+  font-family: 'TW-Kai', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', serif;
   font-weight: 700;
 }
 
@@ -228,7 +230,7 @@ html, body {
 /* Status: small backlit bilingual text (not flaps), per the reference photo. */
 .kcell.status { display: flex; flex-direction: column; justify-content: center; line-height: 1.15; font-size: 0; }
 .kcell.status .st-en { font-family: 'Oswald', 'Helvetica Neue', Arial, sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 0.06em; color: #E9E4D4; }
-.kcell.status .st-zh { font-family: 'Free HK Kai', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', serif; font-weight: 600; font-size: 12px; color: #E9E4D4; }
+.kcell.status .st-zh { font-family: 'TW-Kai', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', serif; font-weight: 600; font-size: 12px; color: #E9E4D4; }
 
 /* ---- Boarding lamp ----------------------------------------------------- */
 .lamp {

@@ -21,7 +21,7 @@ typography:
     lineHeight: 1.1
     letterSpacing: "0.06em"
   display-zh:
-    fontFamily: "'Free HK Kai', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', serif"
+    fontFamily: "'TW-Kai', 'Kaiti TC', 'STKaiti', 'BiauKai', 'DFKai-SB', serif"
     fontSize: "30px"
     fontWeight: 700
     letterSpacing: "0.12em"
@@ -168,7 +168,7 @@ field. Its job is to be the object's edge.
 
 **Display Font:** Oswald (with Arial Narrow, Helvetica Neue fallback)
 **Data Font:** IBM Plex Mono
-**Chinese Font:** Free HK Kai (自由香港楷書), self-hosted, with system kaiti
+**Chinese Font:** TW-Kai (自由香港楷書), self-hosted, with system kaiti
 fallbacks (Kaiti TC, STKaiti, BiauKai, DFKai-SB)
 
 **Character:** A three-way pairing on hard contrast axes — a condensed grotesque
@@ -181,14 +181,14 @@ a split-flap grid align.
 - **Display / Masthead** (Oswald 700, 40px, tracking 0.06em, uppercase): the
   "AIRCRAFT DEPARTURES / AIRCRAFT ARRIVALS" board title, printed black on the
   marigold frame.
-- **Display 中文** (Free HK Kai 700, 30px, tracking 0.12em): the Chinese masthead
+- **Display 中文** (TW-Kai 700, 30px, tracking 0.12em): the Chinese masthead
   (離港班機 / 抵港班機), black on the frame, set beside the English.
 - **Drum** (IBM Plex Mono 700, 18px): every flap character — flight number,
   destination, times, gate. The fixed advance width is what lets characters
   stack into aligned columns.
-- **Status** (Oswald 600 13px EN over Free HK Kai 600 12px ZH, `#E9E4D4`): the
+- **Status** (Oswald 600 13px EN over TW-Kai 600 12px ZH, `#E9E4D4`): the
   small two-line backlit status label (BOARDING 登機, GATE CLOSED 閘口關閉).
-- **Label** (Oswald 600 12px EN / Free HK Kai 600 11px ZH, `#8A8577`): the
+- **Label** (Oswald 600 12px EN / TW-Kai 600 11px ZH, `#8A8577`): the
   bilingual column captions. Lowercase English, per the real Kai Tak captions.
 
 ### Named Rules
@@ -198,7 +198,7 @@ swapping in a proportional face breaks the grid, not just the look.
 
 **The Bilingual-Parity Rule.** English and Traditional Chinese are never
 decorative translations of each other — they share the row and the visual
-weight. Chinese is always kaiti (Free HK Kai), never a Noto/Hei sans.
+weight. Chinese is always kaiti (TW-Kai), never a Noto/Hei sans.
 
 ## 4. Elevation
 
@@ -271,7 +271,7 @@ expressed through the flap fold or an emitted glow, never a shadow.
 ### Do:
 - **Do** keep the drum column in **IBM Plex Mono** — the grid alignment depends
   on a fixed advance width.
-- **Do** set all Chinese in **Free HK Kai** kaiti (自由香港楷書); re-run
+- **Do** set all Chinese in **TW-Kai** kaiti (自由香港楷書); re-run
   `scripts/subset-kai-font.sh` after adding any new Chinese glyphs.
 - **Do** spend **red only on live events** — a lit lamp (`#E8261C`) or a revised
   time (`#FF5040`). Nothing else.

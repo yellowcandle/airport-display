@@ -58,23 +58,25 @@
   // the red arrival-time drums) or '' when the status carries no time.
   function mapStatus(raw) {
     var s = raw == null ? '' : String(raw).trim();
-    if (s === '') return { en: '', zh: '', time: '' };
+    if (s === '') return { en: '', zh: '', time: '', rawTime: '' };
     var lower = s.toLowerCase();
     var m = s.match(/(\d{1,2}:\d{2})/);
+    var rawTime = m ? m[1] : '';
     var time = m ? KaiTak.formatTime(m[1]) : '';
 
-    if (lower.indexOf('cancel') === 0) return { en: 'CANCELLED', zh: '取消', time: '' };
-    if (lower.indexOf('divert') === 0) return { en: 'DIVERTED', zh: '轉飛', time: '' };
-    // "At gate 11:53" / "At gate 23:38 (05/07/2026)"
-    if (lower.indexOf('at gate') === 0) return { en: 'AT GATE', zh: '已到閘', time: time };
+    if (lower.indexOf('cancel') === 0) return { en: 'CANCELLED', zh: '取消', time: '', rawTime: '' };
+    if (lower.indexOf('divert') === 0) return { en: 'DIVERTED', zh: '轉飛', time: '', rawTime: '' };
+    // "At gate 11:53" / "At gate 23:38 (05/07/2026)" — revised time supersedes
+    // the original schedule for sort purposes.
+    if (lower.indexOf('at gate') === 0) return { en: 'AT GATE', zh: '已到閘', time: time, rawTime: rawTime };
     // "Landed 07:32"
-    if (lower.indexOf('landed') === 0) return { en: 'LANDED', zh: '已降落', time: time };
+    if (lower.indexOf('landed') === 0) return { en: 'LANDED', zh: '已降落', time: time, rawTime: rawTime };
     // "Est at 08:37"
-    if (lower.indexOf('est') === 0) return { en: 'DELAYED', zh: '延遲', time: time };
-    if (lower.indexOf('delay') === 0) return { en: 'DELAYED', zh: '延遲', time: '' };
+    if (lower.indexOf('est') === 0) return { en: 'DELAYED', zh: '延遲', time: time, rawTime: rawTime };
+    if (lower.indexOf('delay') === 0) return { en: 'DELAYED', zh: '延遲', time: '', rawTime: '' };
 
     // Unrecognized status text: surface it uppercased rather than dropping it.
-    return { en: s.toUpperCase(), zh: '', time: '' };
+    return { en: s.toUpperCase(), zh: '', time: '', rawTime: '' };
   }
 
   // Terminal (fully-arrived) state — the row is done and starts its grace
@@ -200,8 +202,13 @@
       if (!presentKeys[key]) rotationIndex.delete(key);
     });
 
+    function effectiveMinutes(item) {
+      var revised = item.mappedStatus.rawTime;
+      return toMinutes(revised || item.raw.scheduled);
+    }
+
     candidates.sort(function (a, b) {
-      return toMinutes(a.raw.scheduled) - toMinutes(b.raw.scheduled);
+      return effectiveMinutes(a) - effectiveMinutes(b);
     });
 
     return candidates.slice(0, ROW_COUNT);
