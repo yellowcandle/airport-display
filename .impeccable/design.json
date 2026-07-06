@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-06T00:00:00Z",
+  "title": "Design System: Kai Tak Departure Board",
+  "extensions": {
+    "colorMeta": {
+      "frame-marigold": { "role": "primary", "displayName": "Frame Marigold", "canonical": "#D9A62B", "tonalRamp": ["#241a06", "#4a370f", "#715318", "#9a7220", "#c2902a", "#d9a62b", "#e6bd5c", "#f0d492", "#f8e9c6"] },
+      "signal-red": { "role": "secondary", "displayName": "Signal Red", "canonical": "#E8261C", "tonalRamp": ["#2c0705", "#560d09", "#82130d", "#ad1912", "#d81f16", "#e8261c", "#f0574e", "#f68a83", "#fbc0bc"] },
+      "revised-red": { "role": "secondary", "displayName": "Revised Red", "canonical": "#FF5040", "tonalRamp": ["#330f0a", "#5e1c14", "#8a281d", "#b53527", "#e04231", "#ff5040", "#ff7a6d", "#ffa89f", "#ffd3ce"] },
+      "board-black": { "role": "neutral", "displayName": "Board Black", "canonical": "#0D0D0D", "tonalRamp": ["#050505", "#0d0d0d", "#1a1a1a", "#2a2a2a", "#3d3d3d", "#5c5c5c", "#8a8a8a", "#bfbfbf", "#f5f5f5"] },
+      "flap-cream": { "role": "neutral", "displayName": "Flap Cream", "canonical": "#F5F3EC", "tonalRamp": ["#26251f", "#403e35", "#5c594d", "#7a776a", "#9a978a", "#bcb9ac", "#dad7cc", "#f5f3ec", "#fbfaf6"] },
+      "label-olive": { "role": "neutral", "displayName": "Muted Olive", "canonical": "#8A8577", "tonalRamp": ["#1c1b16", "#33312a", "#4c4a40", "#666356", "#807c6d", "#8a8577", "#a6a294", "#c4c1b6", "#e3e1da"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Masthead", "purpose": "Board title, printed black on the marigold frame." },
+      "drum": { "displayName": "Drum", "purpose": "Every flap character; monospace is structural to grid alignment." },
+      "status": { "displayName": "Status", "purpose": "Small backlit bilingual status label; plain text, not flaps." },
+      "label": { "displayName": "Column caption", "purpose": "Recessive bilingual column headers." }
+    },
+    "shadows": [
+      { "name": "frame-drop", "value": "0 12px 40px rgba(0,0,0,0.6)", "purpose": "The marigold frame casting onto the wall — the only cast shadow in the system." },
+      { "name": "lamp-glow", "value": "0 0 8px 2px rgba(232,38,28,0.8)", "purpose": "Emitted halo of a lit boarding lamp." }
+    ],
+    "motion": [
+      { "name": "flap-flip", "value": "transform <dur>ms ease-in", "purpose": "The folding-leaf flip of a drum cell, stepping char by char." },
+      { "name": "hud-transition", "value": "background 160ms ease, color 160ms ease, border-color 160ms ease", "purpose": "HUD pill hover/focus fill." },
+      { "name": "reduced-motion", "value": "none (snap to value)", "purpose": "prefers-reduced-motion: cells snap and the board falls silent." }
+    ],
+    "breakpoints": [
+      { "name": "fluid", "value": "none — the board is composed at native size and transform:scale-d whole to fit the viewport" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Flap Cell",
+      "kind": "custom",
+      "refersTo": "flap-cell",
+      "description": "The atom of the board — a fixed-size mechanical drum character at rest.",
+      "html": "<span class=\"ds-flap\">7</span>",
+      "css": ".ds-flap { display:inline-flex; align-items:center; justify-content:center; width:20px; height:28px; background:#1A1A1A; color:#F5F3EC; font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:18px; border-radius:3px; }"
+    },
+    {
+      "name": "Flap Cell (revised time)",
+      "kind": "custom",
+      "refersTo": "flap-cell-time",
+      "description": "Drum cell for the revised/actual time column — glyph in revised red.",
+      "html": "<span class=\"ds-flap-time\">4</span>",
+      "css": ".ds-flap-time { display:inline-flex; align-items:center; justify-content:center; width:20px; height:28px; background:#1A1A1A; color:#FF5040; font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:18px; border-radius:3px; }"
+    },
+    {
+      "name": "Airline Card",
+      "kind": "card",
+      "refersTo": "airline-card",
+      "description": "Light sticker carrying the carrier logo; brand-colored code chip is the fallback.",
+      "html": "<span class=\"ds-airline\">CX</span>",
+      "css": ".ds-airline { display:inline-flex; align-items:center; justify-content:center; width:50px; height:26px; background:#F5F3EC; color:#00594C; font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:16px; border-radius:3px; }"
+    },
+    {
+      "name": "Boarding Lamp",
+      "kind": "custom",
+      "refersTo": "lamp",
+      "description": "Row-end status dot; lit red with a glow means act now, else a dim ember.",
+      "html": "<span class=\"ds-lamp ds-lamp-lit\"></span>",
+      "css": ".ds-lamp { display:inline-block; width:14px; height:14px; border-radius:50%; background:#4A1210; } .ds-lamp-lit { background:#E8261C; box-shadow:0 0 8px 2px rgba(232,38,28,0.8); }"
+    },
+    {
+      "name": "Status Label",
+      "kind": "custom",
+      "refersTo": "status-label",
+      "description": "Two-line backlit bilingual status; plain text, does not flip.",
+      "html": "<span class=\"ds-status\"><span class=\"ds-status-en\">BOARDING</span><span class=\"ds-status-zh\">登機</span></span>",
+      "css": ".ds-status { display:inline-flex; flex-direction:column; align-items:center; line-height:1.15; } .ds-status-en { font-family:Oswald,'Helvetica Neue',Arial,sans-serif; font-weight:600; font-size:13px; letter-spacing:0.06em; color:#E9E4D4; } .ds-status-zh { font-family:'Free HK Kai','Kaiti TC','STKaiti',serif; font-weight:600; font-size:12px; color:#E9E4D4; }"
+    },
+    {
+      "name": "HUD Pill",
+      "kind": "nav",
+      "refersTo": "hud-pill",
+      "description": "Corner navigation / sound control; the only chrome outside the board.",
+      "html": "<a class=\"ds-hud\" href=\"#\">○ about 關於</a>",
+      "css": ".ds-hud { display:inline-block; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13px; letter-spacing:0.08em; color:#F3E4BE; text-decoration:none; padding:6px 12px; border:1px solid rgba(217,166,43,0.6); border-radius:999px; background:rgba(217,166,43,0.12); cursor:pointer; transition:background 160ms ease,color 160ms ease,border-color 160ms ease; } .ds-hud:hover, .ds-hud:focus-visible { color:#0D0D0D; background:#D9A62B; border-color:#D9A62B; outline:none; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Kai Tak Departures Hall, 1996",
+    "overview": "This is not a UI that references a split-flap board; it is one, rebuilt in the browser and wired to live Hong Kong International Airport data. A matte black board sits inside a scuffed marigold frame under hall lighting; mechanical drum characters clatter over from blank as today's real flights, gates, and codeshares roll up the schedule. Bilingual by construction: English condensed grotesque and Traditional-Chinese kaiti carry equal weight. Color is almost entirely structural, and red is reserved for things happening now. The delight is not decoration; it is the mechanism.",
+    "keyCharacteristics": [
+      "Physical artifact, not app skin — matte board in a marigold frame.",
+      "Structural color: near-monochrome surface, red spent only on live events.",
+      "Motion is the product: flip, cascade, rotate, clack.",
+      "Bilingual parity — condensed grotesque + brush kaiti, equal weight.",
+      "Fixed-canvas: the board is composed once and scaled whole to the viewport."
+    ],
+    "rules": [
+      { "name": "The Red-Means-Now Rule", "body": "Red is forbidden as decoration. It appears in exactly two places: a lit boarding lamp (#E8261C) and a revised time (#FF5040). If red is on the board, something is happening to that flight right now.", "section": "colors" },
+      { "name": "The One-Frame Rule", "body": "Marigold (#D9A62B) is the frame and the HUD accent — nothing else. Never a fill behind data, never a text color on the board field.", "section": "colors" },
+      { "name": "The Monospace-Is-Structural Rule", "body": "The drum column type must stay monospace; the alignment of the board depends on every glyph having the same advance.", "section": "typography" },
+      { "name": "The Bilingual-Parity Rule", "body": "English and Traditional Chinese share the row and the visual weight. Chinese is always kaiti (Free HK Kai), never a Noto/Hei sans.", "section": "typography" },
+      { "name": "The One-Shadow Rule", "body": "The frame is the only element that casts. No flap, card, button, or label gets a drop shadow; depth on the board is the flap fold or an emitted glow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep the drum column in IBM Plex Mono — grid alignment depends on a fixed advance width.",
+      "Do set all Chinese in Free HK Kai kaiti; re-run scripts/subset-kai-font.sh after adding new glyphs.",
+      "Do spend red only on live events — a lit lamp (#E8261C) or a revised time (#FF5040).",
+      "Do give English and Traditional Chinese equal weight on every row and label.",
+      "Do honour prefers-reduced-motion — snap cells to value and silence the clack.",
+      "Do scale the whole board to fit; compose at native size, never reflow the grid."
+    ],
+    "donts": [
+      "Don't turn this into a flat Material dashboard or app skin — it is a physical artifact.",
+      "Don't use glassmorphism, neon gradients, or the 'departure board reimagined' idiom.",
+      "Don't ship SaaS clichés: card grids, tracked eyebrow kickers, hero-metric tiles, 01/02/03 numbers.",
+      "Don't add skeuomorphic overkill — no fake screws, heavy bevels, or drop-shadow soup.",
+      "Don't give any flap, card, button, or label a drop shadow — the frame is the only element that casts.",
+      "Don't set Chinese in Noto / a Hei sans — it must be kaiti.",
+      "Don't use marigold as a fill behind data or a text color on the board field."
+    ]
+  }
+}

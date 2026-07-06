@@ -245,20 +245,20 @@
     return { setValue: setValue, destroy: destroy, el: el };
   }
 
-  // A non-flap "logo card" for the airline column. Shows the carrier's real
-  // logo (Aviasales logo CDN, keyed by IATA code; LOGO_OVERRIDES supplies
-  // self-hosted art for carriers whose CDN logo is stale) on a light sticker,
-  // and falls back to a brand-coloured 2-letter chip only when the logo
-  // actually fails — unresolved carriers reach the CDN as their 3-letter ICAO
-  // code, which 404s and triggers onerror -> chip. The <img> is shown by
-  // default (no
-  // lazy loading: a display:none lazy image never intersects the viewport, so
-  // it would never load). Same container/return shape as createFlapCell.
-  // Per-carrier logo overrides: self-hosted art for carriers whose CDN logo is
-  // outdated or off-brand. Keyed by resolved IATA code; add entries as needed.
+  // A split-flap logo card for the airline column. Shows the carrier's real
+  // logo (Aviasales CDN by IATA code; LOGO_OVERRIDES supplies self-hosted art
+  // for carriers whose CDN logo is stale) on a light "sticker", and falls back
+  // to a brand-coloured 2-letter chip only when the logo actually fails —
+  // unresolved carriers reach the CDN as their 3-letter ICAO code, which 404s
+  // and triggers onerror -> chip. On change the card folds like the drum cells:
+  // the current face rotates up and away, the logo swaps at the fold, the new
+  // face folds down into place (with the same clack). The <img> shows by
+  // default — no lazy loading, since a display:none lazy image never intersects
+  // the viewport and would never load.
   var LOGO_OVERRIDES = {
     UO: 'logos/hkexpress.svg' // official current HK Express branding (colour variant)
   };
+  var LOGO_FLIP_MS = 130; // per half-fold; matches the card-flap feel
 
   function createLogoCell(container, opts) {
     opts = opts || {};
@@ -267,30 +267,31 @@
     if (opts.width) el.style.setProperty('--fw', opts.width);
     if (opts.height) el.style.setProperty('--fh', opts.height);
 
+    // The fold panel carries everything that flips; the card holds the
+    // perspective and is the stable mount point.
+    var flip = document.createElement('div');
+    flip.className = 'logo-flip';
     var chip = document.createElement('span');
     chip.className = 'logo-code';
     var img = document.createElement('img');
     img.className = 'logo-img';
     img.alt = '';
-    el.appendChild(chip);
-    el.appendChild(img);
+    flip.appendChild(chip);
+    flip.appendChild(img);
+    el.appendChild(flip);
     container.appendChild(el);
 
     var currentCode = null;
+    var flipTimer = null;
     // Only errors flip to the chip; a successful (re)load clears any prior
     // error state. The image shows by default, so success needs no handler.
     img.addEventListener('error', function () { el.classList.add('no-logo'); });
     img.addEventListener('load', function () { el.classList.remove('no-logo'); });
 
-    // setValue({ code, name }) — only swaps the image when the code actually
-    // changes, so codeshare-rotation re-renders don't re-request the same logo.
-    function setValue(v) {
-      v = v || {};
-      var code = v.code == null ? '' : String(v.code);
-      if (code === currentCode) return;
-      currentCode = code;
+    // Swap the card's content with no animation — the state at rest.
+    function paint(code, name) {
       chip.textContent = code;
-      el.title = v.name || '';
+      el.title = name || '';
       if (code) {
         el.classList.remove('no-logo'); // optimistically show the logo
         img.src = LOGO_OVERRIDES[code] ||
@@ -299,6 +300,31 @@
         el.classList.add('no-logo'); // blank row: no logo, empty chip
         img.removeAttribute('src');
       }
+    }
+
+    // setValue({ code, name }) — flips to a new carrier only when the code
+    // actually changes, so codeshare-rotation re-renders don't re-flip identically.
+    function setValue(v) {
+      v = v || {};
+      var code = v.code == null ? '' : String(v.code);
+      if (code === currentCode) return;
+      currentCode = code;
+
+      if (REDUCED) { paint(code, v.name); return; } // still board, no fold
+
+      SOUND.tick(); // one clack, like the drum flips
+      clearTimeout(flipTimer);
+      el.classList.add('is-flipping'); // fold the current face up and away
+      flipTimer = setTimeout(function () {
+        paint(code, v.name);                     // swap at the fold
+        flip.style.transition = 'none';
+        el.classList.remove('is-flipping');
+        flip.style.transform = 'rotateX(90deg)'; // new face poised below
+        (global.requestAnimationFrame || function (f) { setTimeout(f, 16); })(function () {
+          flip.style.transition = '';            // release: fold down into place
+          flip.style.transform = '';
+        });
+      }, LOGO_FLIP_MS);
     }
 
     function destroy() {
