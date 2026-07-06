@@ -37,7 +37,7 @@
   // Evict any row whose own (possibly revised) time is this far in the past
   // regardless of status text — mirrors departures' BOARDING/FINAL CALL
   // finding; the same feed staleness affects arrivals statuses too.
-  var STALE_THRESHOLD_MIN = 60;
+  var STALE_THRESHOLD_MIN = 40;
   var CASCADE_STAGGER_MS = 150; // per-row stagger below the divergence point
   var BLANK_HOLD_MS = 350; // blank a row before flipping in its bumped-up content
   var ROTATION_INTERVAL_MS = 10000; // codeshare rotation cadence
