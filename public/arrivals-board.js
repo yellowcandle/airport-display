@@ -26,7 +26,7 @@
   // Slot counts must match the column widths in arrivals-board.css
   // (:root --col-arr-*) and board.css (--col-*).
   var FLIGHT_SLOTS = 7;
-  var ORIGIN_EN_SLOTS = 10;
+  var ORIGIN_EN_SLOTS = 12;
   var SCHED_SLOTS = 5;
   var BAGGAGE_SLOTS = 3; // reclaim belt e.g. "14"; 3 slots leaves room for "B3"
   var ARRTIME_SLOTS = 5; // actual/estimated arrival time, red drums
@@ -132,7 +132,7 @@
       flight: makeDrumGroup(flightEl, FLIGHT_SLOTS),
       originEN: makeDrumGroup(originENEl, ORIGIN_EN_SLOTS),
       originZH: global.createFlapCell(originZHEl, {
-        mode: 'card', width: '80px', height: '26px', fontSize: '17px', className: 'zh-card'
+        mode: 'card', width: '96px', height: '26px', fontSize: '17px', className: 'zh-card'
       }),
       sched: makeDrumGroup(schedEl, SCHED_SLOTS),
       baggage: makeDrumGroup(baggageEl, BAGGAGE_SLOTS),

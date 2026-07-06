@@ -35,8 +35,8 @@
   /* Column widths = (slot count × cell width), matching the slot counts in board.js */
   --col-airline: 52px;
   --col-flight:  calc(7 * var(--cw));   /* 140 */
-  --col-destEN:  calc(10 * var(--cw));  /* 200 */
-  --col-destZH:  82px;
+  --col-destEN:  calc(12 * var(--cw));  /* 240 */
+  --col-destZH:  96px;
   --col-sched:   calc(5 * var(--cw));   /* 100 */
   --col-gate:    calc(3 * var(--cw));   /* 60 */
   --col-status:  150px;

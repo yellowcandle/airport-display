@@ -17,7 +17,7 @@
   // ---- Layout constants -------------------------------------------------
   // Slot counts match the column widths in board.css (:root --col-*).
   var FLIGHT_SLOTS = 7;
-  var DEST_EN_SLOTS = 10;
+  var DEST_EN_SLOTS = 12;
   var SCHED_SLOTS = 5;
   var GATE_SLOTS = 3;        // HKIA gate e.g. "216"
   var DEPARTURE_SLOTS = 5;   // revised/actual departure time, red drums
@@ -117,7 +117,7 @@
       flight: makeDrumGroup(flightEl, FLIGHT_SLOTS),
       destEN: makeDrumGroup(destENEl, DEST_EN_SLOTS),
       destZH: global.createFlapCell(destZHEl, {
-        mode: 'card', width: '80px', height: '26px', fontSize: '17px', className: 'zh-card'
+        mode: 'card', width: '96px', height: '26px', fontSize: '17px', className: 'zh-card'
       }),
       sched: makeDrumGroup(schedEl, SCHED_SLOTS),
       gate: makeDrumGroup(gateEl, GATE_SLOTS),

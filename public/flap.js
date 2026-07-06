@@ -113,6 +113,12 @@
     ch.textContent = str; // '' or ' ' both render as a blank black face
   }
 
+  // Reduced-motion: honour the OS setting. When on, cells snap straight to
+  // their value instead of flipping (and, since the clack lives inside flip(),
+  // the board is silent too) — a calm, still departures board.
+  var REDUCED = typeof matchMedia === 'function' &&
+    matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   // Perform exactly one top-to-bottom flap from `fromStr` to `toStr`.
   // Only ever holds a single pending timer (cleared first, defensively).
   function flip(cell, fromStr, toStr, duration, done) {
@@ -206,9 +212,23 @@
       });
     }
 
+    // Snap straight to a value with no flap animation (reduced-motion path).
+    function snap(target) {
+      clearTimeout(cell.timer);
+      cell.animating = false;
+      cell.current = cell.target = target;
+      cell.leaf.style.transition = 'none';
+      cell.leaf.style.transform = 'rotateX(0deg)';
+      setFace(cell.topCh, target);
+      setFace(cell.bottomCh, target);
+      setFace(cell.frontCh, target);
+      setFace(cell.backCh, target);
+    }
+
     function setValue(str) {
       if (cell.dead) return;
       var target = cell.mode === 'drum' ? drumChar(str) : str == null ? '' : String(str);
+      if (REDUCED) { if (cell.current !== target) snap(target); return; }
       cell.target = target;
       if (cell.animating) return; // the single live loop will chase the new target
       if (cell.current === target) return; // idempotent: no flip
