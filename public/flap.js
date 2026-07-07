@@ -61,16 +61,43 @@
       var AC = global.AudioContext || global.webkitAudioContext;
       if (!AC) return;
       ctx = new AC();
-      // 30ms of front-loaded, decaying white noise — reused for every tick.
-      var n = Math.floor(ctx.sampleRate * 0.03);
-      noiseBuf = ctx.createBuffer(1, n, ctx.sampleRate);
+      // One ~70ms "flap" one-shot, reused for every tick. Modelled on a real
+      // Solari leaf rather than plain noise: (1) a ~2ms broadband STRIKE — the
+      // leaf slapping the stop; (2) two damped partials for the plastic card's
+      // resonant "thock"; (3) a short noise tail for mechanical grit. Baking it
+      // into the buffer keeps per-tick cost to a single BufferSource.
+      var sr = ctx.sampleRate;
+      var n = Math.floor(sr * 0.07);
+      noiseBuf = ctx.createBuffer(1, n, sr);
       var d = noiseBuf.getChannelData(0);
-      for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+      var i, peak = 0;
+      for (i = 0; i < n; i++) {
+        var t = i / sr;
+        var strike = (Math.random() * 2 - 1) * Math.exp(-t / 0.0016);
+        var body = 0.6 * Math.sin(2 * Math.PI * 200 * t) * Math.exp(-t / 0.018)
+                 + 0.32 * Math.sin(2 * Math.PI * 520 * t) * Math.exp(-t / 0.010);
+        var grit = (Math.random() * 2 - 1) * 0.4 * Math.exp(-t / 0.012);
+        d[i] = 0.9 * strike + body + grit;
+        if (Math.abs(d[i]) > peak) peak = Math.abs(d[i]);
+      }
+      if (peak > 0) for (i = 0; i < n; i++) d[i] /= peak; // normalize, no clip
     }
 
     function unlock() {
       ensure();
-      if (ctx && ctx.state === 'suspended') ctx.resume();
+      if (!ctx) return;
+      // resume() alone is unreliable on the first gesture in Firefox (macOS &
+      // iOS) and iOS Safari — the context stays 'suspended', so the first
+      // unmute/flip is silent and it takes a second gesture to actually start.
+      // Priming with a 1-sample silent BufferSource inside the gesture forces
+      // the context to 'running' now, so the very first sound is audible.
+      if (ctx.state === 'suspended' && ctx.resume) ctx.resume();
+      try {
+        var s = ctx.createBufferSource();
+        s.buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+        s.connect(ctx.destination);
+        s.start(0);
+      } catch (e) {}
     }
 
     function tick() {
@@ -80,10 +107,10 @@
       last = now;
       var src = ctx.createBufferSource();
       src.buffer = noiseBuf;
-      src.playbackRate.value = 0.85 + Math.random() * 0.5; // slight per-tick variation
+      src.playbackRate.value = 0.9 + Math.random() * 0.28; // per-tick pitch variation
       var lp = ctx.createBiquadFilter();
       lp.type = 'lowpass';
-      lp.frequency.value = 2600 + Math.random() * 1200;
+      lp.frequency.value = 6500 + Math.random() * 2500; // keep the strike crisp
       var g = ctx.createGain();
       g.gain.value = 0.05 + Math.random() * 0.03;
       src.connect(lp); lp.connect(g); g.connect(ctx.destination);
