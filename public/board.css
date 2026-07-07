@@ -19,6 +19,7 @@
 }
 
 :root {
+  color-scheme: dark; /* board is a fixed dark design — stop mobile auto-dark from re-tinting it */
   /* Palette */
   --frame-yellow: #E8B534;
   --board-black: #0D0D0D;

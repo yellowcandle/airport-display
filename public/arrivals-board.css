@@ -12,6 +12,7 @@
  */
 
 :root {
+  color-scheme: dark; /* board is a fixed dark design — stop mobile auto-dark from re-tinting it */
   /* Arrivals column widths = (slot count × --cw), matching the slot counts in
      arrivals-board.js. --cw / --ch / --col-gap / card widths inherit from
      board.css. */
