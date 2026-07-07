@@ -215,12 +215,14 @@
       if (TERMINAL_STATUSES[statusEn]) {
         var firstSeen = terminalFirstSeen.get(item.key);
         if (firstSeen == null) {
-          // DEPARTED flights already gone before our first load (e.g. this
-          // morning's 00:05 flights) shouldn't appear at all. GATE CLOSED is
-          // still current activity, so it's always shown at least once —
-          // HKIA's feed can leave a flight parked on GATE CLOSED for many
-          // minutes without ever flipping to Dep HH:MM.
-          if (statusEn === 'DEPARTED' && previousKeys.indexOf(item.key) === -1) return;
+          // A flight already terminal (DEPARTED or GATE CLOSED) the first time
+          // we ever see it went terminal before we started watching — e.g. a
+          // cold load landing on a bank of just-closed gates — so it must not
+          // fill the board. Only keep a terminal flight we witnessed live (its
+          // key was on the previous frame); then hold it up to TERMINAL_TTL_MS,
+          // since HKIA can park a flight on GATE CLOSED for minutes without ever
+          // flipping to Dep HH:MM.
+          if (previousKeys.indexOf(item.key) === -1) return;
           terminalFirstSeen.set(item.key, now);
         } else if (now - firstSeen > TERMINAL_TTL_MS) {
           return; // lingered too long in this terminal status

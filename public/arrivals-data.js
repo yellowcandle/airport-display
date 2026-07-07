@@ -218,12 +218,14 @@
       if (TERMINAL_STATUSES[statusEn]) {
         var firstSeen = terminalFirstSeen.get(item.key);
         if (firstSeen == null) {
-          // AT GATE flights already done before our first load (e.g. this
-          // morning's 00:05 arrivals) shouldn't appear at all. LANDED is
-          // still current activity, so it's always shown at least once —
-          // HKIA's feed can leave a flight parked on LANDED for many minutes
-          // without ever flipping to At gate HH:MM.
-          if (statusEn === 'AT GATE' && previousKeys.indexOf(item.key) === -1) return;
+          // A flight already terminal (AT GATE or LANDED) the first time we
+          // ever see it arrived before we started watching — e.g. a cold load
+          // landing on a bank of just-landed flights — so it must not fill the
+          // board. Only keep a terminal flight we witnessed live (its key was
+          // on the previous frame); then hold it up to TERMINAL_TTL_MS, since
+          // HKIA can park a flight on LANDED for minutes without ever flipping
+          // to At gate HH:MM.
+          if (previousKeys.indexOf(item.key) === -1) return;
           terminalFirstSeen.set(item.key, now);
         } else if (now - firstSeen > TERMINAL_TTL_MS) {
           return; // lingered too long in this terminal status
