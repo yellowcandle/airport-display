@@ -1,4 +1,4 @@
-# Kai Tak Departure Board
+# 啟德復古航班顯示牌 · Kai Tak Retro Flight Board
 
 A web recreation of the iconic split-flap "AIRCRAFT DEPARTURES / 離港班機" board
 from Hong Kong's old Kai Tak Airport, driven by **live** Hong Kong International
